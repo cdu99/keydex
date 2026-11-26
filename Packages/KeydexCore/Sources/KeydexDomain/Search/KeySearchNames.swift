@@ -17,6 +17,23 @@ enum KeySearchNames {
     /// Symbols that may be glued to other characters in a query ("⌘⇧F").
     static let glueableSymbols: Set<Character> = ["⌘", "⇧", "⌥", "⌃", "+", "←", "→", "↑", "↓", "↩", "⎋", "⌫", "⌦", "⇥"]
 
+    /// Special keys by name; when a name fits several keys ("tab", "enter"), the most
+    /// common key wins.
+    static let specialKeysByName: [String: SpecialKey] = {
+        let keys: [SpecialKey] = [
+            .returnKey, .enter, .tab, .backTab, .space, .delete, .forwardDelete, .escape, .clear,
+            .leftArrow, .rightArrow, .upArrow, .downArrow, .home, .end, .pageUp, .pageDown,
+            .help, .capsLock, .eject,
+        ] + (1...20).map(SpecialKey.function)
+        var byName: [String: SpecialKey] = [:]
+        for key in keys {
+            for name in names(of: .special(key)) where byName[name] == nil {
+                byName[name] = key
+            }
+        }
+        return byName
+    }()
+
     /// Names (normalized) by which `key` can be searched.
     static func names(of key: Key) -> Set<String> {
         let raw: [String] = switch key {
