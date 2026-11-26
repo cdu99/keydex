@@ -20,6 +20,12 @@ final class ShortcutPanelController {
         self.viewModel = viewModel
         let hostingView = NSHostingView(rootView: ShortcutPanelView(viewModel: viewModel))
         hostingView.sizingOptions = [] // The controller sizes the window itself.
+        // Clip to the panel's rounded shape: nothing may be drawn in the corners, or the
+        // window shadow (computed from the content's transparency) would be square.
+        hostingView.wantsLayer = true
+        hostingView.layer?.cornerRadius = PanelMetrics.cornerRadius
+        hostingView.layer?.cornerCurve = .continuous
+        hostingView.layer?.masksToBounds = true
         panel.contentView = hostingView
         viewModel.onClose = { [weak self] in self?.dismiss() }
         resizeWhenContentChanges()
@@ -109,6 +115,14 @@ final class ShortcutPanelController {
             y: visible.midY - size.height / 2 + visible.height * 0.04 // Slightly above center.
         )
         panel.setFrame(CGRect(origin: origin, size: size).integral, display: true)
+        refreshShadow()
+    }
+
+    /// The shadow follows the rounded shape only once the new content is drawn: recompute it
+    /// now and after SwiftUI's next render pass.
+    private func refreshShadow() {
+        panel.invalidateShadow()
+        DispatchQueue.main.async { [panel] in panel.invalidateShadow() }
     }
 
     /// Resizes the visible panel without moving its header (and search field).
@@ -117,6 +131,7 @@ final class ShortcutPanelController {
         let frame = panel.frame
         let resized = CGRect(x: frame.midX - size.width / 2, y: frame.maxY - size.height, width: size.width, height: size.height)
         panel.setFrame(resized.integral, display: true)
+        refreshShadow()
     }
 
     /// Content changes while visible (fresh shortcuts after the cached ones, search results):
