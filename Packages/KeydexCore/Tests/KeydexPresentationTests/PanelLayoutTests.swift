@@ -51,6 +51,15 @@ struct PanelLayoutTests {
         #expect(shownCount == 120)
     }
 
+    @Test("A lower height target spreads the same groups over more, shorter columns")
+    func heightFraction() {
+        let groups = (0..<4).map { Fixtures.group("Menu \($0)", index: $0, rows: 6) }
+        let tall = PanelLayout(groups: groups, availableSize: Fixtures.screen)
+        let short = PanelLayout(groups: groups, availableSize: Fixtures.screen, heightFraction: 0.3)
+        #expect(short.columns.count > tall.columns.count)
+        #expect(short.panelSize.height < tall.panelSize.height)
+    }
+
     @Test("When even the widest layout is too tall, the content scrolls within the screen height")
     func overflow() {
         let groups = (0..<4).map { Fixtures.group("Menu \($0)", index: $0, rows: 80) }

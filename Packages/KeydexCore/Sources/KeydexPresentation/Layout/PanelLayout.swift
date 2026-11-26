@@ -24,15 +24,21 @@ public struct PanelLayout: Equatable, Sendable {
 
     /// Arranges `groups` so the panel fits in `availableSize`: the widest columns that fit
     /// without scrolling, in as few columns as possible. Scrolls only as a last resort.
-    public init(groups: [ShortcutGroup], availableSize: CGSize) {
+    ///
+    /// - Parameter heightFraction: share of the available height to aim for. Below 1, more
+    ///   columns are used to keep the panel short (search results, in a panel whose width is
+    ///   already set).
+    public init(groups: [ShortcutGroup], availableSize: CGSize, heightFraction: CGFloat = 1) {
         let widths = PanelMetrics.columnWidths
-        let candidates = widths.lazy.map { Self(groups: groups, availableSize: availableSize, columnWidth: $0) }
+        let candidates = widths.lazy.map {
+            Self(groups: groups, availableSize: availableSize, columnWidth: $0, heightFraction: heightFraction)
+        }
         self = candidates.first { !$0.needsScrolling } ?? Self(
-            groups: groups, availableSize: availableSize, columnWidth: widths[widths.count - 1]
+            groups: groups, availableSize: availableSize, columnWidth: widths[widths.count - 1], heightFraction: heightFraction
         )
     }
 
-    private init(groups: [ShortcutGroup], availableSize: CGSize, columnWidth: CGFloat) {
+    private init(groups: [ShortcutGroup], availableSize: CGSize, columnWidth: CGFloat, heightFraction: CGFloat) {
         let maxBodyHeight = max(availableSize.height - PanelMetrics.chromeHeight, PanelMetrics.rowHeight)
         let maxColumns = Int(
             (availableSize.width - 2 * PanelMetrics.padding + PanelMetrics.columnSpacing)
@@ -42,7 +48,7 @@ public struct PanelLayout: Equatable, Sendable {
             rowCounts: groups.map(\.shortcuts.count),
             metrics: PanelMetrics.flowMetrics,
             maxColumns: max(1, maxColumns),
-            maxHeight: Int(maxBodyHeight)
+            maxHeight: Int(maxBodyHeight * min(max(heightFraction, 0.1), 1))
         )
         columns = plan.columns.map { segments in
             segments.map { segment in

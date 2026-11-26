@@ -47,6 +47,10 @@ public final class ShortcutPanelViewModel {
     @ObservationIgnored private var availableSize: CGSize = .zero
     @ObservationIgnored private var backgroundRefresh: Task<Void, Never>?
 
+    /// Search results spread over more columns to stay short, instead of one tall column
+    /// in a wide panel.
+    private static let searchResultsHeightFraction: CGFloat = 0.4
+
     /// Time for the user's app to get the keyboard back before its menu item is pressed.
     private static let focusReturnDelay = Duration.milliseconds(80)
 
@@ -199,7 +203,11 @@ public final class ShortcutPanelViewModel {
         let searchQuery = ShortcutQuery(query)
         displayedLayout = searchQuery.isEmpty
             ? fullLayout
-            : PanelLayout(groups: searchQuery.filter(catalog.groups), availableSize: fullLayout.panelSize)
+            : PanelLayout(
+                groups: searchQuery.filter(catalog.groups),
+                availableSize: fullLayout.panelSize,
+                heightFraction: Self.searchResultsHeightFraction
+            )
 
         let shortcuts = displayedShortcuts
         if selectingFirstResult {
