@@ -33,7 +33,7 @@ struct SheetAugmentedShortcutSourceTests {
 
     @Test("Menus come first, then the sheets that apply to the app")
     func order() throws {
-        let groups = try catalog(menus: .success([menuGroup]), sheets: [zsh, safariOnly, system]).groups
+        let groups = try catalog(menus: .success([menuGroup]), sheets: [system, zsh, safariOnly]).groups
         #expect(groups.map(\.title) == ["File", "zsh · Mots", "macOS · Bureaux"])
         #expect(groups.map(\.kind) == [.menu, .sheet, .sheet])
     }
@@ -42,6 +42,14 @@ struct SheetAugmentedShortcutSourceTests {
     func dedup() throws {
         let groups = try catalog(menus: .success([menuGroup]), sheets: [zsh]).groups
         #expect(groups[1].shortcuts.map(\.title) == ["Effacer le mot précédent"])
+    }
+
+    @Test("A sheet for this app wins over a sheet for every app on the same keys")
+    func appSpecificWins() throws {
+        let systemText = "# macOS\n## Texte\n- `⌃W` Fermer la fenêtre\n- `⌃E` Fin de paragraphe"
+        let groups = try catalog(menus: .success([]), sheets: [systemText, zsh]).groups
+        #expect(groups.map(\.title) == ["zsh · Mots", "macOS · Texte"])
+        #expect(groups[1].shortcuts.map(\.title) == ["Fin de paragraphe"])
     }
 
     @Test("Without a menu bar, the sheets are still shown")
