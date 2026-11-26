@@ -3,7 +3,16 @@ import KeydexDomain
 
 /// How the groups of a catalog are arranged in the panel, and the resulting panel size.
 public struct PanelLayout: Equatable, Sendable {
-    public let columns: [[ShortcutGroup]]
+    /// A menu, or the part of it shown in one column.
+    public struct Block: Equatable, Sendable, Identifiable {
+        public let title: String
+        /// True when this block continues a menu started in the previous column.
+        public let isContinuation: Bool
+        public let shortcuts: [Shortcut]
+        public let id: String
+    }
+
+    public let columns: [[Block]]
     public let columnWidth: CGFloat
     /// Height of the column area if it were fully shown.
     public let contentHeight: CGFloat
@@ -27,13 +36,23 @@ public struct PanelLayout: Equatable, Sendable {
             (availableSize.width - 2 * PanelMetrics.padding + PanelMetrics.columnSpacing)
                 / (columnWidth + PanelMetrics.columnSpacing)
         )
-        let plan = ColumnPlanner.plan(
-            heights: groups.map { Double(PanelMetrics.groupHeight(rowCount: $0.shortcuts.count)) },
-            spacing: Double(PanelMetrics.groupSpacing),
+        let plan = ColumnFlowPlanner.plan(
+            rowCounts: groups.map(\.shortcuts.count),
+            metrics: PanelMetrics.flowMetrics,
             maxColumns: max(1, maxColumns),
-            maxHeight: Double(maxBodyHeight)
+            maxHeight: Int(maxBodyHeight)
         )
-        columns = plan.columns.map { Array(groups[$0]) }
+        columns = plan.columns.map { segments in
+            segments.map { segment in
+                let group = groups[segment.group]
+                return Block(
+                    title: group.title,
+                    isContinuation: segment.rows.lowerBound > 0,
+                    shortcuts: Array(group.shortcuts[segment.rows]),
+                    id: "\(group.menuIndex)-\(segment.rows.lowerBound)"
+                )
+            }
+        }
         self.columnWidth = columnWidth
         contentHeight = CGFloat(plan.height)
         needsScrolling = contentHeight > maxBodyHeight

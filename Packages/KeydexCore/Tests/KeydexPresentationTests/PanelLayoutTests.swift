@@ -22,17 +22,33 @@ struct PanelLayoutTests {
         #expect(!layout.needsScrolling)
         #expect(layout.panelSize.height <= Fixtures.screen.height)
         #expect(layout.panelSize.width <= Fixtures.screen.width)
-        #expect(layout.columns.flatMap { $0 }.map(\.menuIndex) == Array(0..<10), "Menu order is preserved")
+        let firstBlocks = layout.columns.flatMap { $0 }.filter { !$0.isContinuation }
+        let expectedTitles = (0..<10).map { "Menu \($0)" }
+        #expect(firstBlocks.map(\.title) == expectedTitles, "Menu order is preserved")
     }
 
     @Test("Narrower columns are used when they avoid scrolling")
     func narrowerColumnsInsteadOfScrolling() {
         // Five tall menus need five columns: only the narrowest width fits five in 1200 pt.
         let groups = (0..<5).map { Fixtures.group("Menu \($0)", index: $0, rows: 30) }
-        let layout = PanelLayout(groups: groups, availableSize: CGSize(width: 1200, height: 700))
+        let layout = PanelLayout(groups: groups, availableSize: CGSize(width: 1200, height: 720))
         #expect(!layout.needsScrolling)
         #expect(layout.columns.count == 5)
         #expect(layout.columnWidth == PanelMetrics.columnWidths.last)
+    }
+
+    @Test("Finder fits a 14-inch screen without scrolling, its long menus continuing across columns")
+    func finderOnSmallScreen() {
+        // Finder's menus: 118 shortcuts; usable area of a 1512×982 screen.
+        let rowCounts = [5, 5, 28, 15, 27, 18, 21, 1]
+        let groups = rowCounts.enumerated().map { Fixtures.group("Menu \($0)", index: $0, rows: $1) }
+        let layout = PanelLayout(groups: groups, availableSize: CGSize(width: 1391, height: 800))
+        #expect(!layout.needsScrolling)
+        let blocks = layout.columns.flatMap { $0 }
+        let shownCount = blocks.map(\.shortcuts.count).reduce(0, +)
+        let hasContinuation = blocks.contains { $0.isContinuation }
+        #expect(hasContinuation)
+        #expect(shownCount == 120)
     }
 
     @Test("When even the widest layout is too tall, the content scrolls within the screen height")

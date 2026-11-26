@@ -98,7 +98,7 @@ public struct ShortcutPanelView: View {
         HStack(alignment: .top, spacing: PanelMetrics.columnSpacing) {
             ForEach(layout.columns.indices, id: \.self) { index in
                 VStack(alignment: .leading, spacing: PanelMetrics.groupSpacing) {
-                    ForEach(layout.columns[index]) { ShortcutGroupView(group: $0, width: layout.columnWidth) }
+                    ForEach(layout.columns[index]) { ShortcutBlockView(block: $0, width: layout.columnWidth) }
                 }
             }
         }

@@ -1,23 +1,29 @@
 import KeydexDomain
 import SwiftUI
 
-/// One menu of the app (title + its shortcuts), as a block of a panel column.
-struct ShortcutGroupView: View {
-    let group: ShortcutGroup
+/// One menu of the app (title + its shortcuts), or the part of it shown in one column.
+struct ShortcutBlockView: View {
+    let block: PanelLayout.Block
     let width: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(group.title.uppercased())
+            title
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(height: PanelMetrics.groupTitleHeight, alignment: .topLeading)
-            ForEach(group.shortcuts) { shortcut in
+            ForEach(block.shortcuts) { shortcut in
                 ShortcutRowView(shortcut: shortcut)
                     .frame(height: PanelMetrics.rowHeight)
             }
         }
         .frame(width: width, alignment: .leading)
+    }
+
+    private var title: Text {
+        let menu = Text(block.title.uppercased())
+        guard block.isContinuation else { return menu }
+        return Text("\(menu) \(Text("(suite)").foregroundStyle(.tertiary))")
     }
 }
 

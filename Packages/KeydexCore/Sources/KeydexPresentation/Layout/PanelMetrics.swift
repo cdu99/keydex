@@ -23,6 +23,12 @@ public enum PanelMetrics {
         groupTitleHeight + CGFloat(rowCount) * rowHeight
     }
 
+    static let flowMetrics = ColumnFlowPlanner.Metrics(
+        titleHeight: Int(groupTitleHeight),
+        rowHeight: Int(rowHeight),
+        groupSpacing: Int(groupSpacing)
+    )
+
     /// Height taken by everything but the columns.
     static let chromeHeight: CGFloat = 2 * padding + headerHeight + headerSpacing
 }
