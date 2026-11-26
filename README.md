@@ -20,13 +20,14 @@ Double-tap ⌘ to search them and run an action, without leaving the keyboard.
 
 Moving to the Mac from Windows or Linux, your muscle memory breaks: the modifiers are different (⌘ ⌃ ⌥), conventions change, and you no longer know which shortcuts exist. Digging through menus or searching the web breaks your flow.
 
-Keydex reads the shortcuts of the frontmost app **from its own menus** and shows them right when you need them, in a native panel that never steals focus. Use it until the shortcuts become muscle memory.
+Keydex reads the shortcuts of the frontmost app **from its own menus**, completes them with **sheets** for the shortcuts no menu lists (shell line editing, terminal keybindings, system shortcuts), and shows them right when you need them, in a native panel that never steals focus. Use it until the shortcuts become muscle memory.
 
 ## Features
 
 - **Glance**: hold **⌘** alone for half a second to see every shortcut of the frontmost app, grouped by menu in the app's own order. Release to hide it.
 - **Search**: double-tap **⌘** and hold the second press. Type to filter by action name or by keys, **↑ ↓** to choose, **↩** to run the action in your app, **Esc** to go back exactly where you were.
 - **Never in the way**: regular shortcuts (⌘C, ⌘Tab, ⌘-click, ⇧⌘…) never show the panel. Keydex only observes events and never intercepts them.
+- **Beyond menus**: [shortcut sheets](docs/SHEETS.md), small Markdown files reloaded as soon as you save them, add the shortcuts that are in no menu. Bundled: zsh line editing and macOS system shortcuts. Ghostty's keybindings are read live from Ghostty itself, so they always match your config.
 - **Mac notation**: keys are shown as on a Mac keyboard and in macOS menus (fn ⌃ ⌥ ⇧ ⌘, ↩ ⌫ ⎋ ←…), including window tiling shortcuts such as `fn ⌃ ←`. Unavailable actions are dimmed.
 - **Fits your screen**: menus flow through balanced columns, and long menus continue in the next column, so even IntelliJ IDEA fits without scrolling.
 - **Fast and light**: shortcuts are prefetched when you switch apps and the panel is prerendered, so it appears with no perceptible delay. Idle: ~0% CPU, ~58 MB.
@@ -34,7 +35,7 @@ Keydex reads the shortcuts of the frontmost app **from its own menus** and shows
 - **Private**: no data collection, no network access. Everything stays on your Mac.
 
 <div align="center">
-<img src="docs/images/search.png" width="560" alt="Search mode: typing 'split' in Ghostty">
+<img src="docs/images/search.png" width="700" alt="Search mode in Ghostty: typing 'mot' (word) finds Ghostty's and zsh's word shortcuts">
 </div>
 
 ### Search syntax
@@ -46,6 +47,21 @@ Keydex reads the shortcuts of the frontmost app **from its own menus** and shows
 | `ctrl`, `alt`, `opt`, `maj` | Windows/Linux and French words work for modifiers. |
 | `esc`, `f5`, `left`, `←`, `space` | Special keys by name or symbol. |
 | `⌃` | Every shortcut using Control. |
+
+## Shortcut sheets
+
+For shortcuts that no menu lists, drop a Markdown file in `~/.config/keydex/`:
+
+```markdown
+# fish
+apps: Ghostty, Terminal
+
+## Autosuggestions
+- `⌃F` Accept the autosuggestion
+- `⌥→` Accept the next word of the autosuggestion
+```
+
+It shows up at the next glance, without relaunching Keydex. See the [sheet guide](docs/SHEETS.md) for the format, priorities and how to share a sheet.
 
 ## Install
 
@@ -84,15 +100,18 @@ It collects nothing, stores only its own settings (local user defaults), and con
 
 ## Limitations
 
-- **Shortcuts that are not in any menu cannot be read.** Many apps handle some shortcuts internally, for example Ghostty's keybindings, most of IntelliJ IDEA's keymap, shell (zsh) line editing, and system shortcuts such as Spaces or screenshots. Support for these is next on the roadmap.
+- **Shortcuts that are in no menu** cannot be read from the app. They need a [sheet](docs/SHEETS.md): bundled (zsh, macOS), written by you, or generated (Ghostty). IntelliJ IDEA's keymap is not covered yet.
 - **Dimmed state may be stale**: some apps only refresh an item's enabled state when its menu is opened.
 - **Secure input**: while a password field is focused, macOS hides keyboard events from other apps, so the panel cannot appear (by design).
 - The UI is in French for now. Localization contributions are welcome.
 
 ## Roadmap
 
-- [ ] Shortcuts that aren't in menus: per-app and system "sheets" in a simple text file, reloaded live, shown apart from the menu shortcuts.
-- [ ] Automatic import of Ghostty (`ghostty +list-keybinds`) and IntelliJ IDEA keymaps.
+- [x] Shortcuts that aren't in menus: Markdown sheets, reloaded live, shown apart from the menu shortcuts.
+- [x] Ghostty's keybindings, read live from Ghostty.
+- [ ] IntelliJ IDEA's keymap.
+- [ ] More bundled sheets (tmux, vim…): [contributions welcome](CONTRIBUTING.md).
+- [ ] Key sequences in sheets ("⌃X then ⌃K").
 - [ ] Windows/Linux → Mac equivalents ("Ctrl+Shift+F" → "⌘⇧F").
 - [ ] Highlight shortcuts you don't use yet.
 - [ ] Prebuilt, notarized releases.
@@ -140,8 +159,9 @@ make clean
   CODE_SIGN_STYLE = Manual
   ```
 - **Inspecting an app**: `swift run keydex-dump <app> [--raw] [--runs N] [--pause MS] [--perform TITLE]` (in `Packages/KeydexCore`) prints what Keydex reads from a running app and how long it takes. The terminal needs the Accessibility permission.
+- **Checking a sheet**: `swift run keydex-dump --check-sheet <file.md>…`.
 - **App icon**: `Keydex/Resources/AppIcon.icon` is an Icon Composer document generated by `scripts/make-app-icon.swift`. You can also open it in Icon Composer (bundled with Xcode).
-- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/), one logical change per commit.
+- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/), one logical change per commit. See [CONTRIBUTING.md](CONTRIBUTING.md).
 - [`logs.md`](logs.md) records the plan, design decisions, measurements and progress (in French).
 
 ## License
