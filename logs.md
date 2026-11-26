@@ -1,6 +1,8 @@
 # Keydex — journal de bord
 
-Ce fichier suit le plan et l'avancement. Il est mis à jour à chaque étape, dans le même commit que le code.
+Ce fichier suit le plan et l'avancement. Il est mis à jour à la fin de chaque étape, dans un commit `docs(logs)`.
+
+Commits : petits, atomiques, au format [Conventional Commits](https://www.conventionalcommits.org/) (`feat(scope): …`, `fix: …`, `test: …`, `docs: …`…). Les étapes 0 à 3 ont été commitées en blocs plus gros, avant cette règle.
 
 ## Plan
 
@@ -175,3 +177,13 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 3. Maintiens ⌘ jusqu'au panneau, puis tape une touche (ex. ⌘W) : le panneau disparaît et le raccourci fonctionne.
 4. **Double appui ⌘ puis maintien** : le panneau reste après le relâchement, avec le ✕. Ferme-le avec ✕ ou un clic ailleurs (Échap arrive à l'étape 5).
 5. Dis-moi si ½ s te paraît trop long ou trop court (réglable à l'étape 6).
+
+### Ajustements du panneau après captures d'écran (2026-11-26)
+Une capture de Finder sur l'écran 14" montrait des menus **coupés en bas**. Un coup d'œil ne pouvant pas défiler, les raccourcis cachés étaient perdus.
+- `feat(panel)` : **colonnes adaptatives**. Largeurs essayées 268 → 236 → 212 pt ; la plus large qui tient sans défiler est retenue.
+- `feat(panel)` : **flux entre colonnes**.
+  - Un long menu continue en haut de la colonne suivante, avec la mention « FICHIER (suite) ».
+  - Jamais moins de 2 lignes de part et d'autre d'une coupure.
+  - Les colonnes sont équilibrées par recherche binaire.
+- **Vérifié par capture** : Finder (118 raccourcis) tient en 4 colonnes et IntelliJ (161) en 5, sans défilement, sur l'écran 14".
+- **À améliorer plus tard** : en colonnes étroites, les titres préfixés d'un sous-menu sont tronqués au milieu (« Code Compl…rent Statement »). Il faudrait privilégier le nom de l'action.
