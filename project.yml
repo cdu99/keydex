@@ -23,6 +23,12 @@ targets:
     platform: macOS
     sources:
       - path: Keydex
+        excludes:
+          - Resources/Sheets
+      # Bundled sheets, copied as a folder (Keydex.app/Contents/Resources/Sheets).
+      - path: Keydex/Resources/Sheets
+        type: folder
+        buildPhase: resources
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
