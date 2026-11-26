@@ -11,6 +11,7 @@ final class ShortcutPanelController {
     private let panel = ShortcutPanel()
     private var presentation: Task<Void, Never>?
     private var outsideClickMonitor: Any?
+    private var appSwitchObserver: NSObjectProtocol?
 
     /// Share of the screen the panel may use, so it never covers it entirely.
     private static let screenFraction = CGSize(width: 0.92, height: 0.86)
@@ -22,6 +23,13 @@ final class ShortcutPanelController {
         panel.contentView = hostingView
         viewModel.onClose = { [weak self] in self?.dismiss() }
         resizeWhenContentChanges()
+        dismissWhenUserSwitchesApp()
+    }
+
+    isolated deinit {
+        if let appSwitchObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(appSwitchObserver)
+        }
     }
 
     /// Mode of the panel being shown (or loading), `nil` when hidden.
@@ -138,6 +146,18 @@ final class ShortcutPanelController {
         guard outsideClickMonitor == nil else { return }
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             MainActor.assumeIsolated { self?.dismiss() }
+        }
+    }
+
+    /// Switching app (⌘Tab, Dock…) makes the panel's shortcuts irrelevant.
+    private func dismissWhenUserSwitchesApp() {
+        appSwitchObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.presentedMode != nil else { return }
+                self.dismiss()
+            }
         }
     }
 
