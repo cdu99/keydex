@@ -2,12 +2,12 @@ import AppKit
 import KeydexDomain
 import KeydexInfrastructure
 
-/// Usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS]
+/// Usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]
 /// Prints the shortcuts Keydex reads from a running app, and how long the read takes.
 
 let arguments = CommandLine.arguments.dropFirst()
 guard let query = arguments.first(where: { !$0.hasPrefix("--") }) else {
-    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS]")
+    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]")
     exit(2)
 }
 let runs = arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 1
@@ -47,6 +47,23 @@ for run in 1...runs {
     print("run \(run): \((clock.now - start).formatted(.units(allowed: [.milliseconds])))")
 }
 guard let catalog else { exit(1) }
+
+/// Triggers the first shortcut with this exact title, to check AXPress on a real app.
+if let index = arguments.firstIndex(of: "--perform") {
+    let title = arguments[arguments.index(after: index)]
+    guard let shortcut = catalog.groups.flatMap(\.shortcuts).first(where: { $0.title == title }) else {
+        print("No shortcut titled '\(title)'.")
+        exit(1)
+    }
+    do {
+        try AXMenuActionPerformer().perform(shortcut, in: app)
+        print("Performed '\(title)' (\(shortcut.keyCombo.displayString)).")
+    } catch {
+        print("Error: \(error)")
+        exit(1)
+    }
+    exit(0)
+}
 
 print("\(app.name) — \(catalog.shortcutCount) shortcuts in \(catalog.groups.count) menus")
 for group in catalog.groups {
