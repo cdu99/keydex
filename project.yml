@@ -1,0 +1,60 @@
+name: Keydex
+options:
+  bundleIdPrefix: app.keydex
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: fr
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  KeydexCore:
+    path: Packages/KeydexCore
+
+targets:
+  Keydex:
+    type: application
+    platform: macOS
+    sources:
+      - path: Keydex
+    configFiles:
+      Debug: Config/Signing.xcconfig
+      Release: Config/Signing.xcconfig
+    dependencies:
+      - package: KeydexCore
+        product: KeydexDomain
+      - package: KeydexCore
+        product: KeydexInfrastructure
+    info:
+      path: Keydex/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Keydex
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        LSUIElement: true # Menu bar app: no Dock icon, no main menu.
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.keydex.Keydex
+        PRODUCT_NAME: Keydex
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO # The Accessibility API cannot be used from a sandboxed app.
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        COMBINE_HIDPI_IMAGES: YES
+
+schemes:
+  Keydex:
+    build:
+      targets:
+        Keydex: all
+    run:
+      config: Debug
+    test:
+      config: Debug
