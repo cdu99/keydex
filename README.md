@@ -52,9 +52,8 @@ Keydex is built from source for now.
 
 **Requirements**: macOS 26 or later, Xcode 26 or later, and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
-Clone the repository, then from its folder:
-
 ```sh
+git clone https://github.com/cdu99/keydex.git && cd keydex
 make install     # builds the Release app, copies it to /Applications and launches it
 ```
 
