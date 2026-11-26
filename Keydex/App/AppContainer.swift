@@ -14,8 +14,7 @@ final class AppContainer {
     let settings: SettingsViewModel
     private let gestureCoordinator: CommandGestureCoordinator
     private let prefetcher: ActiveAppPrefetcher
-    let sheets: DirectorySheetProvider
-    private let sheetsWatcher: DirectoryWatcher
+    let sheetLibrary: SheetLibrary
 
     /// Where users write their own sheets (created if missing).
     static let userSheetsDirectory = FileManager.default.homeDirectoryForCurrentUser
@@ -26,11 +25,10 @@ final class AppContainer {
     init() {
         let activeAppProvider = WorkspaceActiveAppTracker()
         let permission = AXPermissionService()
-        try? FileManager.default.createDirectory(at: Self.userSheetsDirectory, withIntermediateDirectories: true)
-        let sheets = DirectorySheetProvider(directories: [Self.bundledSheetsDirectory, Self.userSheetsDirectory])
+        let sheetLibrary = SheetLibrary(bundledFolder: Self.bundledSheetsDirectory, userFolder: Self.userSheetsDirectory)
         let store = ShortcutCatalogStore(source: SheetAugmentedShortcutSource(
             menus: AXMenuShortcutSource(),
-            sheetProviders: [sheets]
+            sheetProviders: [sheetLibrary.provider]
         ))
         let gestureTiming = GestureTimingPreference(store: UserDefaultsGestureTimingStore())
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
@@ -40,12 +38,9 @@ final class AppContainer {
             performer: AXMenuActionPerformer()
         ))
 
-        self.sheets = sheets
         // Saving a sheet applies at the next glance, without relaunching.
-        sheetsWatcher = DirectoryWatcher(directory: Self.userSheetsDirectory) {
-            sheets.reload()
-            Task { await store.removeAll() }
-        }
+        sheetLibrary.onChange = { Task { await store.removeAll() } }
+        self.sheetLibrary = sheetLibrary
         self.activeAppProvider = activeAppProvider
         self.permission = permission
         self.panelController = panelController
