@@ -5,15 +5,30 @@ import SwiftUI
 /// Content of the menu bar item.
 struct StatusMenu: View {
     let activeAppProvider: any ActiveAppProviding
+    let permission: any AccessibilityPermissionProviding
+
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Text(activeAppTitle)
+        if permission.isGranted {
+            Button(showShortcutsTitle) {
+                openWindow(id: WindowID.shortcutList)
+                NSApp.activate()
+            }
+            .disabled(activeAppProvider.activeApp == nil)
+        } else {
+            Text("Keydex a besoin de l'accès Accessibilité")
+            Button("Autoriser l'accès…") {
+                permission.requestAccess()
+                permission.openSystemSettings()
+            }
+        }
         Divider()
         Button("Quitter Keydex") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
 
-    private var activeAppTitle: String {
-        activeAppProvider.activeApp.map { "App active : \($0.name)" } ?? "Aucune app active"
+    private var showShortcutsTitle: String {
+        activeAppProvider.activeApp.map { "Raccourcis de \($0.name)" } ?? "Aucune app active"
     }
 }

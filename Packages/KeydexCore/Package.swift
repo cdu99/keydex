@@ -14,5 +14,7 @@ let package = Package(
     targets: [
         .target(name: "KeydexDomain"),
         .target(name: "KeydexInfrastructure", dependencies: ["KeydexDomain"]),
+        .testTarget(name: "KeydexDomainTests", dependencies: ["KeydexDomain"]),
+        .testTarget(name: "KeydexInfrastructureTests", dependencies: ["KeydexInfrastructure"]),
     ]
 )
