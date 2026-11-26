@@ -50,6 +50,7 @@ targets:
         ENABLE_APP_SANDBOX: NO # The Accessibility API cannot be used from a sandboxed app.
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         COMBINE_HIDPI_IMAGES: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
 schemes:
   Keydex:
