@@ -40,7 +40,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 | 3 | Geste ⌘ maintenu (coup d'œil) + double appui | ✅ |
 | 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ✅ |
 | 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ✅ |
-| 6 | Réglages, lancement au démarrage, accueil des permissions | ⏳ |
+| 6 | Réglages, lancement au démarrage, accueil des permissions | ✅ |
 | 7 | (après v1) Fiches perso par app et fiche système, rechargées à chaud | ⏳ |
 
 ### Limites macOS connues
@@ -251,3 +251,47 @@ Une capture de Finder sur l'écran 14" montrait des menus **coupés en bas**. Un
 3. ↑ ↓ pour choisir, **↩** pour exécuter : le panneau se ferme et l'action se fait dans ton app.
 4. **Échap** ou **✕** : retour exact dans ton app, la frappe y va directement.
 5. Clic sur une ligne : l'action est exécutée. ⌘Tab : le panneau se ferme.
+
+### Étape 6 — Réglages et finition ✅ (2026-11-26)
+**Fait** (commits atomiques)
+- `feat(domain)` : bornes des délais réglables (coup d'œil 0,2 à 1,5 s, double appui 0,15 à 0,5 s), avec ramenage dans les bornes.
+- `feat(infra)` : délais enregistrés dans `UserDefaults` (préférences locales) ; lancement à l'ouverture de session via `SMAppService` (sans app auxiliaire).
+- `feat(presentation)` : `GestureTimingPreference`, partagée entre les réglages et le geste, et `SettingsViewModel`.
+- `feat(gesture)` : le geste suit les délais **en direct**, sans relancer l'app.
+- `feat(app)` : fenêtre **Réglages** (⌘, depuis le menu). Elle contient :
+  - les curseurs des délais et un bouton « Valeurs par défaut » ;
+  - le lancement à l'ouverture de session ;
+  - l'état de l'accès Accessibilité ;
+  - une note de confidentialité.
+- `feat(app)` : fenêtre **Bienvenue**. Elle s'ouvre au lancement si la permission manque, explique les deux gestes et la raison de la permission, ouvre le bon panneau des Réglages Système, puis affiche « C'est prêt ! » en direct. Elle reste accessible via « Guide de démarrage… ».
+- `feat(app)` : **icône** (touche ⌘ sur fond bleu), générée par `scripts/make-app-icon.swift`.
+- `build` : `make release` et `make install` (copie dans /Applications, nécessaire pour le lancement automatique).
+- `docs` : README (usage, installation, architecture).
+- Tests : 97 au total.
+
+**Vérifié en réel**
+- Curseur du coup d'œil réglé sur 1 s (via l'Accessibilité) : la valeur est enregistrée, un maintien de 0,8 s n'affiche plus rien et 1,2 s affiche le panneau.
+- Captures des fenêtres Réglages et Bienvenue (mode sombre).
+- Build Release : 1,7 Mo ; au repos, **57,6 Mo d'empreinte mémoire** et 0 % CPU.
+
+**Non vérifié par moi**, pour ne pas modifier tes réglages système :
+- le mode clair ;
+- l'option « Réduire la transparence » ;
+- le lancement automatique, qui nécessite `make install`.
+
+**À tester**
+1. `make run`, puis icône ⌘ → **Réglages…** : change le délai du coup d'œil et essaie tout de suite (sans relancer).
+2. Icône ⌘ → **Guide de démarrage…** : la fenêtre d'accueil.
+3. `make install`, puis active « Ouvrir Keydex à l'ouverture de session ». Après une déconnexion/reconnexion, Keydex doit être là. macOS peut demander ton accord dans Éléments de connexion : le réglage t'y emmène.
+4. Réglages Système › Apparence › **Clair**, puis maintiens ⌘ : le panneau doit rester lisible.
+5. Réglages Système › Accessibilité › Affichage › **Réduire la transparence** : le panneau devient opaque.
+
+## Bilan v1
+Toutes les fonctionnalités v1 des specs sont en place. Côté qualité : 97 tests unitaires, des vérifications en réel par événements simulés et captures, et des commits atomiques (Conventional Commits) depuis l'étape 3.
+
+**Suite proposée** (hors v1, dans l'ordre de valeur pour toi) :
+1. **Fiches perso** par app et fiche « système » (fichier texte simple, rechargé à chaud), affichées à part. C'est ce qui couvrira zsh/Ghostty, les raccourcis d'IntelliJ absents des menus, et les Spaces, Mission Control et captures d'écran.
+2. Import des raccourcis IntelliJ (keymap XML) et Ghostty (`ghostty +list-keybinds`) dans ces fiches.
+3. Équivalences Windows/Linux → Mac (« Ctrl+Shift+F » → « ⌘⇧F »), recherchables dans le panneau.
+4. Mise en avant des raccourcis pas encore utilisés.
+5. Petites améliorations : privilégier le nom de l'action quand il est tronqué ; touches en « keycaps ».
