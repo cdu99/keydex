@@ -14,7 +14,7 @@ struct ShortcutPanelViewModelTests {
         let viewModel = ShortcutPanelViewModel(
             activeAppProvider: StubActiveApp(app),
             permission: permission,
-            loadCatalog: LoadShortcutCatalog(source: StubShortcutSource(result: result))
+            store: ShortcutCatalogStore(source: StubShortcutSource(result: result))
         )
         return (viewModel, permission)
     }
@@ -65,6 +65,27 @@ struct ShortcutPanelViewModelTests {
         #expect(viewModel.content == .noShortcuts(Fixtures.app))
     }
 
+    @Test("Cached shortcuts are shown at once, then replaced by fresh ones")
+    func cachedThenRefreshed() async throws {
+        let source = MutableShortcutSource(groups: [Fixtures.group("Fichier", index: 1, rows: 3)])
+        let store = ShortcutCatalogStore(source: source)
+        _ = try await store.refresh(Fixtures.app)
+        let viewModel = ShortcutPanelViewModel(
+            activeAppProvider: StubActiveApp(Fixtures.app),
+            permission: StubPermission(granted: true),
+            store: store
+        )
+        source.groups = [Fixtures.group("Fichier", index: 1, rows: 5)]
+
+        await viewModel.prepare(mode: .glance, availableSize: Fixtures.screen)
+        #expect(viewModel.shownShortcutCount == 3, "Cached content first")
+
+        for _ in 0..<200 where viewModel.shownShortcutCount != 5 {
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        #expect(viewModel.shownShortcutCount == 5, "Then the refreshed content")
+    }
+
     @Test("Read errors become a readable message")
     func failure() async {
         let (viewModel, _) = makeViewModel(result: .failure(.appNotResponding))
@@ -75,5 +96,11 @@ struct ShortcutPanelViewModelTests {
         }
         #expect(app == Fixtures.app)
         #expect(message.contains("ne répond pas"))
+    }
+}
+
+private extension ShortcutPanelViewModel {
+    var shownShortcutCount: Int? {
+        if case let .loaded(catalog, _) = content { catalog.shortcutCount } else { nil }
     }
 }

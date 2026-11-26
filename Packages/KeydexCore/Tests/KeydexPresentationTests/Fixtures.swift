@@ -1,5 +1,6 @@
 import CoreGraphics
 import KeydexDomain
+import Synchronization
 
 enum Fixtures {
     static let app = AppInfo(processID: 42, bundleIdentifier: "com.example.app", name: "Example")
@@ -24,6 +25,22 @@ struct StubShortcutSource: ShortcutSource {
 
     func catalog(for app: AppInfo) throws(ShortcutSourceError) -> ShortcutCatalog {
         try ShortcutCatalog(app: app, groups: result.get())
+    }
+}
+
+/// A source whose menus can change between reads.
+final class MutableShortcutSource: ShortcutSource {
+    private let state: Mutex<[ShortcutGroup]>
+
+    init(groups: [ShortcutGroup]) { state = Mutex(groups) }
+
+    var groups: [ShortcutGroup] {
+        get { state.withLock { $0 } }
+        set { state.withLock { $0 = newValue } }
+    }
+
+    func catalog(for app: AppInfo) throws(ShortcutSourceError) -> ShortcutCatalog {
+        ShortcutCatalog(app: app, groups: groups)
     }
 }
 

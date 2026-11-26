@@ -27,16 +27,18 @@ public final class ShortcutPanelViewModel {
 
     @ObservationIgnored private let activeAppProvider: any ActiveAppProviding
     @ObservationIgnored private let permission: any AccessibilityPermissionProviding
-    @ObservationIgnored private let loadCatalog: LoadShortcutCatalog
+    @ObservationIgnored private let store: ShortcutCatalogStore
+    @ObservationIgnored private var availableSize: CGSize = .zero
+    @ObservationIgnored private var backgroundRefresh: Task<Void, Never>?
 
     public init(
         activeAppProvider: any ActiveAppProviding,
         permission: any AccessibilityPermissionProviding,
-        loadCatalog: LoadShortcutCatalog
+        store: ShortcutCatalogStore
     ) {
         self.activeAppProvider = activeAppProvider
         self.permission = permission
-        self.loadCatalog = loadCatalog
+        self.store = store
     }
 
     /// Size the panel window should have for the current content.
@@ -44,9 +46,15 @@ public final class ShortcutPanelViewModel {
         if case let .loaded(_, layout) = content { layout.panelSize } else { PanelMetrics.messageSize }
     }
 
-    /// Loads the shortcuts of the active app and lays them out to fit `availableSize`.
+    /// Prepares the content for the active app, laid out to fit `availableSize`.
+    ///
+    /// Returns as soon as something can be shown: cached shortcuts are shown immediately
+    /// and refreshed in the background (the menus, or their enabled state, may have
+    /// changed). Without a cache, waits for the first read.
     public func prepare(mode: Mode, availableSize: CGSize) async {
+        backgroundRefresh?.cancel()
         self.mode = mode
+        self.availableSize = availableSize
         guard permission.isGranted else {
             content = .permissionRequired
             return
@@ -55,20 +63,44 @@ public final class ShortcutPanelViewModel {
             content = .noActiveApp
             return
         }
-        content = .loading(app)
-        do {
-            let catalog = try await loadCatalog(for: app)
-            content = catalog.isEmpty
-                ? .noShortcuts(app)
-                : .loaded(catalog, PanelLayout(groups: catalog.groups, availableSize: availableSize))
-        } catch {
-            content = .failed(app, message: Self.message(for: error))
+        if let cached = await store.cachedCatalog(for: app) {
+            show(cached)
+            backgroundRefresh = Task { [weak self] in await self?.refresh(app) }
+        } else {
+            content = .loading(app)
+            await refresh(app)
         }
+    }
+
+    /// Stops background work once the panel is hidden.
+    public func panelDidClose() {
+        backgroundRefresh?.cancel()
+        backgroundRefresh = nil
     }
 
     public func requestPermission() {
         permission.requestAccess()
         permission.openSystemSettings()
+    }
+
+    private func refresh(_ app: AppInfo) async {
+        do {
+            let catalog = try await store.refresh(app)
+            guard !Task.isCancelled else { return }
+            show(catalog)
+        } catch {
+            guard !Task.isCancelled else { return }
+            // Keep showing cached shortcuts rather than replacing them by an error.
+            if case let .loaded(shown, _) = content, shown.app == app { return }
+            content = .failed(app, message: Self.message(for: error))
+        }
+    }
+
+    private func show(_ catalog: ShortcutCatalog) {
+        if case let .loaded(shown, _) = content, shown == catalog { return }
+        content = catalog.isEmpty
+            ? .noShortcuts(catalog.app)
+            : .loaded(catalog, PanelLayout(groups: catalog.groups, availableSize: availableSize))
     }
 
     private static func message(for error: ShortcutSourceError) -> String {

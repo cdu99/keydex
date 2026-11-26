@@ -14,11 +14,11 @@ final class AppContainer {
     init() {
         let activeAppProvider = WorkspaceActiveAppTracker()
         let permission = AXPermissionService()
-        let loadCatalog = LoadShortcutCatalog(source: AXMenuShortcutSource())
+        let store = ShortcutCatalogStore(source: AXMenuShortcutSource())
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
             activeAppProvider: activeAppProvider,
             permission: permission,
-            loadCatalog: loadCatalog
+            store: store
         ))
 
         self.activeAppProvider = activeAppProvider

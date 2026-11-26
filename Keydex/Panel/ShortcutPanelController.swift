@@ -1,5 +1,6 @@
 import AppKit
 import KeydexPresentation
+import Observation
 import SwiftUI
 
 /// Shows and hides the shortcut panel: window sizing, placement and dismissal.
@@ -21,6 +22,7 @@ final class ShortcutPanelController {
         })
         hostingView.sizingOptions = [] // The controller sizes the window itself.
         panel.contentView = hostingView
+        resizeWhenContentChanges()
     }
 
     /// Mode of the panel being shown (or loading), `nil` when hidden.
@@ -43,11 +45,18 @@ final class ShortcutPanelController {
         presentedMode = nil
         panel.orderOut(nil)
         stopMonitoringOutsideClicks()
+        viewModel.panelDidClose()
     }
 
     // MARK: Window
 
     private func show(on screen: NSScreen) {
+        place(on: screen)
+        panel.orderFrontRegardless()
+        startMonitoringOutsideClicks()
+    }
+
+    private func place(on screen: NSScreen) {
         let size = viewModel.preferredSize
         let visible = screen.visibleFrame
         let origin = CGPoint(
@@ -55,8 +64,21 @@ final class ShortcutPanelController {
             y: visible.midY - size.height / 2 + visible.height * 0.04 // Slightly above center.
         )
         panel.setFrame(CGRect(origin: origin, size: size).integral, display: true)
-        panel.orderFrontRegardless()
-        startMonitoringOutsideClicks()
+    }
+
+    /// Cached content is shown first, then refreshed: follow size changes while visible.
+    private func resizeWhenContentChanges() {
+        withObservationTracking {
+            _ = viewModel.preferredSize
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if panel.isVisible, let screen = panel.screen {
+                    place(on: screen)
+                }
+                resizeWhenContentChanges()
+            }
+        }
     }
 
     private static func screenUnderMouse() -> NSScreen {
