@@ -32,14 +32,14 @@ if arguments.contains("--raw") {
     exit(0)
 }
 
-let load = LoadShortcutCatalog(source: AXMenuShortcutSource())
+let source = AXMenuShortcutSource()
 let clock = ContinuousClock()
 var catalog: ShortcutCatalog?
 for run in 1...runs {
     if run > 1, pause > 0 { try await Task.sleep(for: .milliseconds(pause)) }
     let start = clock.now
     do {
-        catalog = try await load(for: app)
+        catalog = try source.catalog(for: app) // Measured synchronously, as the store reads it.
     } catch {
         print("Error: \(error)")
         exit(1)
