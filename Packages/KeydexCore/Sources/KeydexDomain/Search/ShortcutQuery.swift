@@ -33,14 +33,14 @@ public struct ShortcutQuery: Equatable, Sendable {
         guard !isEmpty else { return groups }
         return groups.compactMap { group in
             let shortcuts = group.shortcuts.filter { matches($0, inMenu: group.title) }
-            return shortcuts.isEmpty ? nil : ShortcutGroup(title: group.title, menuIndex: group.menuIndex, shortcuts: shortcuts)
+            return shortcuts.isEmpty ? nil : group.replacingShortcuts(with: shortcuts)
         }
     }
 
     public func matches(_ shortcut: Shortcut, inMenu menuTitle: String) -> Bool {
         guard shortcut.keyCombo.modifiers.isSuperset(of: requiredModifiers) else { return false }
         let keyNames = KeySearchNames.names(of: shortcut.keyCombo.key)
-        let name = SearchText.normalize(([menuTitle] + shortcut.menuPath.submenuTitles + [shortcut.title]).joined(separator: " "))
+        let name = SearchText.normalize(([menuTitle] + shortcut.context + [shortcut.title]).joined(separator: " "))
         return terms.allSatisfy { term in
             if keyNames.contains(term) { return true }
             let designatesKeyOnly = !requiredModifiers.isEmpty && term.count == 1

@@ -69,7 +69,7 @@ print("\(app.name) — \(catalog.shortcutCount) shortcuts in \(catalog.groups.co
 for group in catalog.groups {
     print("\n[\(group.title)]")
     for shortcut in group.shortcuts {
-        let submenu = shortcut.menuPath.submenuTitles.joined(separator: " › ")
+        let submenu = shortcut.context.joined(separator: " › ")
         let label = submenu.isEmpty ? shortcut.title : "\(submenu) › \(shortcut.title)"
         let disabled = shortcut.isEnabled ? "" : "  (grisé)"
         print("  \(shortcut.keyCombo.displayString.padding(toLength: 8, withPad: " ", startingAt: 0)) \(label)\(disabled)")

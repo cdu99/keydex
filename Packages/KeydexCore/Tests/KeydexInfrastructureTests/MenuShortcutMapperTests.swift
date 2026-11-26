@@ -31,7 +31,7 @@ struct MenuShortcutMapperTests {
     @Test("Groups follow menu bar order and keep their menu index; empty menus are dropped")
     func groupOrder() {
         #expect(groups.map(\.title) == ["Apple", "Fichier", "Fenêtre"])
-        #expect(groups.map(\.menuIndex) == [0, 1, 3])
+        #expect(groups.map(\.id) == ["menu:0", "menu:1", "menu:3"])
     }
 
     @Test("Separators and items without shortcut are skipped; disabled items are kept, greyed")
@@ -46,8 +46,8 @@ struct MenuShortcutMapperTests {
     func submenus() {
         let window = groups[2].shortcuts
         #expect(window.map(\.title) == ["Gauche", "Réduire"])
-        #expect(window[0].menuPath.submenuTitles == ["Placer"])
-        #expect(window[0].menuPath.components.map(\.index) == [3, 0, 0])
+        #expect(window[0].context == ["Placer"])
+        #expect(window[0].menuPath?.components.map(\.index) == [3, 0, 0])
         #expect(window[0].keyCombo.displayString == "⌃←")
     }
 }

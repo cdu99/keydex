@@ -38,4 +38,22 @@ struct ShortcutModelTests {
         #expect(!catalog.isEmpty)
         #expect(ShortcutCatalog(app: app, groups: []).isEmpty)
     }
+
+    @Test("Menu shortcuts can be run and show their submenus; documented ones cannot be run")
+    func origins() {
+        let menuShortcut = Shortcut(
+            title: "Gauche",
+            keyCombo: KeyCombo(modifiers: [.function, .control], key: .special(.leftArrow)),
+            isEnabled: true,
+            menuPath: path
+        )
+        #expect(menuShortcut.isPerformable)
+        #expect(menuShortcut.context == ["Déplacer et redimensionner"])
+
+        let documented = Shortcut(id: "zsh/mots/1", title: "Effacer le mot précédent",
+                                  keyCombo: KeyCombo(modifiers: .control, key: .character("W")), context: ["Mots"])
+        #expect(!documented.isPerformable)
+        #expect(documented.isEnabled)
+        #expect(documented.id != menuShortcut.id)
+    }
 }

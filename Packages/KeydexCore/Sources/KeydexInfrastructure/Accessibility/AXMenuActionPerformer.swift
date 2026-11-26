@@ -18,7 +18,8 @@ public struct AXMenuActionPerformer: ShortcutActionPerforming {
             children: { Self.items(under: $0, isMenuBar: CFEqual($0, menuBar)) },
             title: { AXElement.attribute(kAXTitleAttribute, of: $0) as? String ?? "" }
         )
-        guard let item = resolver.resolve(shortcut.menuPath, from: menuBar) else { throw .itemNotFound }
+        guard let menuPath = shortcut.menuPath else { throw .notPerformable }
+        guard let item = resolver.resolve(menuPath, from: menuBar) else { throw .itemNotFound }
         guard AXUIElementPerformAction(item, kAXPressAction as CFString) == .success else { throw .actionFailed }
     }
 

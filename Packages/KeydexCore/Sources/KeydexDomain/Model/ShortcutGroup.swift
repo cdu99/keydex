@@ -1,15 +1,30 @@
-/// Shortcuts that belong to the same top-level menu (File, Edit, View…).
+/// Shortcuts shown together: a top-level menu (File, Edit…) or a section of a sheet.
 public struct ShortcutGroup: Hashable, Sendable, Identifiable {
+    public enum Kind: Hashable, Sendable {
+        /// Read from the app's menu bar.
+        case menu
+        /// Documented in a sheet (shortcuts that are in no menu).
+        case sheet
+    }
+
+    public let id: String
     public let title: String
-    /// Position of the menu in the menu bar, which keeps groups in the app's own order.
-    public let menuIndex: Int
+    public let kind: Kind
     public let shortcuts: [Shortcut]
 
-    public var id: Int { menuIndex }
-
-    public init(title: String, menuIndex: Int, shortcuts: [Shortcut]) {
+    public init(id: String, title: String, kind: Kind, shortcuts: [Shortcut]) {
+        self.id = id
         self.title = title
-        self.menuIndex = menuIndex
+        self.kind = kind
         self.shortcuts = shortcuts
+    }
+
+    /// A top-level menu, identified by its position in the menu bar.
+    public init(title: String, menuIndex: Int, shortcuts: [Shortcut]) {
+        self.init(id: "menu:\(menuIndex)", title: title, kind: .menu, shortcuts: shortcuts)
+    }
+
+    public func replacingShortcuts(with shortcuts: [Shortcut]) -> ShortcutGroup {
+        ShortcutGroup(id: id, title: title, kind: kind, shortcuts: shortcuts)
     }
 }

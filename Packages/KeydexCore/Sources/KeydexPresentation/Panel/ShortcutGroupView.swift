@@ -76,7 +76,7 @@ struct ShortcutRowView: View {
     }
 
     private var title: Text {
-        let submenus = shortcut.menuPath.submenuTitles
+        let submenus = shortcut.context
         guard !submenus.isEmpty else { return Text(shortcut.title) }
         let prefix = Text((submenus + [""]).joined(separator: " › ")).foregroundStyle(isSelected ? .white.opacity(0.75) : .secondary)
         return Text("\(prefix)\(shortcut.title)")

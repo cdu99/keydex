@@ -49,7 +49,7 @@ public struct PanelLayout: Equatable, Sendable {
                     title: group.title,
                     isContinuation: segment.rows.lowerBound > 0,
                     shortcuts: Array(group.shortcuts[segment.rows]),
-                    id: "\(group.menuIndex)-\(segment.rows.lowerBound)"
+                    id: "\(group.id)-\(segment.rows.lowerBound)"
                 )
             }
         }
