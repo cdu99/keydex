@@ -22,7 +22,8 @@ let package = Package(
         // the Accessibility permission). Not shipped in the app.
         .executableTarget(name: "KeydexDump", dependencies: ["KeydexDomain", "KeydexInfrastructure"]),
         .testTarget(name: "KeydexDomainTests", dependencies: ["KeydexDomain"]),
-        .testTarget(name: "KeydexInfrastructureTests", dependencies: ["KeydexInfrastructure"]),
+        // Fixtures are read through #filePath, not bundled.
+        .testTarget(name: "KeydexInfrastructureTests", dependencies: ["KeydexInfrastructure"], exclude: ["Fixtures"]),
         .testTarget(name: "KeydexPresentationTests", dependencies: ["KeydexPresentation"]),
     ]
 )
