@@ -19,10 +19,12 @@ Une app de barre de menus qui affiche les raccourcis de l'app au premier plan :
 
 ### Architecture (Clean)
 ```
-Keydex/                       App : composition root (AppContainer), présentation SwiftUI/AppKit
+Keydex/                       App : composition root (AppContainer), barre de menus, NSPanel
 Packages/KeydexCore/
   Sources/KeydexDomain/       Modèle et règles métier purs (Foundation seulement), protocoles
   Sources/KeydexInfrastructure/  Adaptateurs macOS (Accessibilité, NSWorkspace, NSEvent…)
+  Sources/KeydexPresentation/ View models, mise en page (pure, testée), vues SwiftUI
+  Sources/KeydexDump/         Outil dev : `swift run keydex-dump <app> [--raw] [--runs N]`
   Tests/                      Tests unitaires (Swift Testing)
 ```
 Les dépendances vont vers le domaine : l'infrastructure implémente ses protocoles, et l'app assemble le tout dans `AppContainer`.
@@ -32,7 +34,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 |---|-------|--------|
 | 0 | Squelette : app de barre de menus, package, Makefile | ✅ |
 | 1 | Cœur : lecture des raccourcis de l'app active (Accessibilité) | ✅ |
-| 2 | Panneau (Liquid Glass, groupes par menu, colonnes adaptatives) | ⏳ |
+| 2 | Panneau (Liquid Glass, groupes par menu, colonnes adaptatives) | ✅ |
 | 3 | Geste ⌘ maintenu (coup d'œil) | ⏳ |
 | 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ⏳ |
 | 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ⏳ |
@@ -46,7 +48,8 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 - **Signature** : avec une signature ad hoc, macOS révoque la permission Accessibilité à chaque rebuild. Voir « Prérequis ».
 - **Secure Input** (champs mot de passe) : macOS masque le clavier aux autres apps, donc pas de panneau.
 
-- **Touche fn / 🌐** : les modificateurs exposés par l'API Accessibilité (format Carbon) n'ont pas de bit pour fn. Les raccourcis de placement des fenêtres (fn ⌃ ←) risquent de s'afficher « ⌃← ». À vérifier avec le diagnostic (étape 1).
+- **Touche fn / 🌐** : ✅ résolu. macOS l'expose via un bit non documenté (1 << 4) des modificateurs AX.
+- **Items grisés** : constaté sur Ghostty, où beaucoup d'items sont grisés alors qu'ils sont utilisables. L'état n'est mis à jour qu'à l'ouverture du menu. Finder et IntelliJ semblent fiables.
 
 ### Prérequis
 - Xcode (le `Makefile` force `DEVELOPER_DIR`, donc `xcode-select` n'a pas besoin d'être changé) et XcodeGen (`brew install xcodegen`).
@@ -110,3 +113,36 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 5. **fn** : dans une app native, ouvre Fenêtre › Déplacer et redimensionner, puis compare avec la liste (« fn ⌃ ← » attendu). Clique « Copier le diagnostic » et colle-moi la partie « Fenêtre » pour que je voie ce que macOS expose.
 
 **Commit** : voir `git log` (« Step 1: … »).
+
+### Correctif fn + outil `keydex-dump` (2026-11-26)
+- Le bit 1 << 4 des modificateurs AX correspond à fn. Window › Fill renvoie 28 = fn + sans ⌘ + ⌃. Les raccourcis de placement des fenêtres s'affichent maintenant correctement (fn ⌃ ←, fn ⌃ F…).
+- `keydex-dump` lit une app depuis le terminal (le terminal doit avoir l'accès Accessibilité).
+- **Mesures** (à froid / ensuite) : Finder 104 / 14 ms, Safari 158 / 19 ms, Ghostty 26 / 9 ms, **IntelliJ 181 / 32 ms** (188 raccourcis).
+
+### Étape 2 — Panneau ✅ (2026-11-26)
+**Fait**
+- Nouveau module `KeydexPresentation` :
+  - `ColumnPlanner` (pur) : répartit les menus en colonnes **dans l'ordre** (de haut en bas, puis de gauche à droite), avec le moins de colonnes possible pour tenir en hauteur, équilibrées. Si même le maximum de colonnes ne suffit pas, le contenu défile.
+  - `PanelMetrics` / `PanelLayout` : hauteurs de lignes fixes, donc la taille du panneau est connue avant rendu, sans mesure en deux passes.
+  - `ShortcutPanelViewModel` : modes `glance` / `sticky`, états chargement, chargé, aucun raccourci, erreur, permission manquante.
+  - Vues : en-tête (icône, nom, nombre de raccourcis, ✕ en mode sticky), menus en colonnes, touches alignées comme dans un menu macOS (modificateurs puis touche), items grisés à 40 %. Fond **Liquid Glass** (`glassEffect`), remplacé par un fond opaque si « Réduire la transparence » est activé.
+- App :
+  - `ShortcutPanel` : `NSPanel` sans bord, **non activant** (ne vole pas le focus), au-dessus des apps plein écran, présent sur tous les bureaux, sans animation.
+  - `ShortcutPanelController` : centré sur l'écran de la souris, limité à 92 % × 86 % de l'écran, fermé par un clic en dehors.
+- La fenêtre provisoire de l'étape 1 est supprimée (remplacée par `keydex-dump` pour le diagnostic).
+- Tests : 34 au total (+16 : colonnes, mise en page, view model avec des faux).
+
+**Vérifié**
+- Le panneau s'ouvre pour Finder (1174 × 817, 4 colonnes) et **Finder reste l'app active**.
+
+**À tester**
+1. `make run`. Va dans une app, puis icône ⌘ → « Afficher les raccourcis de <app> ».
+2. Vérifie :
+   - le rendu Liquid Glass en mode clair et en mode sombre ;
+   - la lisibilité ;
+   - l'ordre des menus (Apple, App, Fichier, Édition…) ;
+   - que les items grisés sont visibles mais estompés.
+3. Clique ailleurs : le panneau se ferme. Le bouton ✕ le ferme aussi.
+4. L'app d'origine garde le focus : sa barre de menus reste affichée et la frappe va toujours dans l'app.
+5. Réglages › Accessibilité › Affichage › **Réduire la transparence** : le fond devient opaque.
+6. Essaie IntelliJ (beaucoup de menus) et un petit écran : tout doit tenir sans défiler dans la plupart des cas.

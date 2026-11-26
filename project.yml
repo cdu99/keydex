@@ -31,6 +31,8 @@ targets:
         product: KeydexDomain
       - package: KeydexCore
         product: KeydexInfrastructure
+      - package: KeydexCore
+        product: KeydexPresentation
     info:
       path: Keydex/Resources/Info.plist
       properties:

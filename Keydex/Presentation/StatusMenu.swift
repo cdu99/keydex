@@ -6,16 +6,12 @@ import SwiftUI
 struct StatusMenu: View {
     let activeAppProvider: any ActiveAppProviding
     let permission: any AccessibilityPermissionProviding
-
-    @Environment(\.openWindow) private var openWindow
+    let showPanel: () -> Void
 
     var body: some View {
         if permission.isGranted {
-            Button(showShortcutsTitle) {
-                openWindow(id: WindowID.shortcutList)
-                NSApp.activate()
-            }
-            .disabled(activeAppProvider.activeApp == nil)
+            Button(showShortcutsTitle, action: showPanel)
+                .disabled(activeAppProvider.activeApp == nil)
         } else {
             Text("Keydex a besoin de l'accès Accessibilité")
             Button("Autoriser l'accès…") {
@@ -29,6 +25,6 @@ struct StatusMenu: View {
     }
 
     private var showShortcutsTitle: String {
-        activeAppProvider.activeApp.map { "Raccourcis de \($0.name)" } ?? "Aucune app active"
+        activeAppProvider.activeApp.map { "Afficher les raccourcis de \($0.name)" } ?? "Aucune app active"
     }
 }

@@ -4,21 +4,25 @@ import PackageDescription
 /// Keydex core, split along Clean Architecture boundaries:
 /// - `KeydexDomain`: pure model and business rules (depends on Foundation only).
 /// - `KeydexInfrastructure`: adapters to macOS (Accessibility, AppKit, workspace).
+/// - `KeydexPresentation`: view models, layout logic and SwiftUI views (no window plumbing).
 let package = Package(
     name: "KeydexCore",
     platforms: [.macOS(.v26)],
     products: [
         .library(name: "KeydexDomain", targets: ["KeydexDomain"]),
         .library(name: "KeydexInfrastructure", targets: ["KeydexInfrastructure"]),
+        .library(name: "KeydexPresentation", targets: ["KeydexPresentation"]),
         .executable(name: "keydex-dump", targets: ["KeydexDump"]),
     ],
     targets: [
         .target(name: "KeydexDomain"),
         .target(name: "KeydexInfrastructure", dependencies: ["KeydexDomain"]),
+        .target(name: "KeydexPresentation", dependencies: ["KeydexDomain"]),
         // Developer tool: prints what Keydex reads from an app (needs the terminal to have
         // the Accessibility permission). Not shipped in the app.
         .executableTarget(name: "KeydexDump", dependencies: ["KeydexDomain", "KeydexInfrastructure"]),
         .testTarget(name: "KeydexDomainTests", dependencies: ["KeydexDomain"]),
         .testTarget(name: "KeydexInfrastructureTests", dependencies: ["KeydexInfrastructure"]),
+        .testTarget(name: "KeydexPresentationTests", dependencies: ["KeydexPresentation"]),
     ]
 )
