@@ -22,7 +22,10 @@ final class ShortcutPanel: NSPanel {
         isReleasedWhenClosed = false
     }
 
-    /// The glance never takes the keyboard (the search mode will, in a later step).
-    override var canBecomeKey: Bool { false }
+    /// Only the sticky panel takes the keyboard (to type a search); the glance never does.
+    /// Even then Keydex is not activated: the user's app stays active, with its menu bar.
+    var acceptsKeyboard = false
+
+    override var canBecomeKey: Bool { acceptsKeyboard }
     override var canBecomeMain: Bool { false }
 }

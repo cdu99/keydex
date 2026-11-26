@@ -17,11 +17,10 @@ final class ShortcutPanelController {
 
     init(viewModel: ShortcutPanelViewModel) {
         self.viewModel = viewModel
-        let hostingView = NSHostingView(rootView: ShortcutPanelView(viewModel: viewModel) { [weak self] in
-            self?.dismiss()
-        })
+        let hostingView = NSHostingView(rootView: ShortcutPanelView(viewModel: viewModel))
         hostingView.sizingOptions = [] // The controller sizes the window itself.
         panel.contentView = hostingView
+        viewModel.onClose = { [weak self] in self?.dismiss() }
         resizeWhenContentChanges()
     }
 
@@ -35,7 +34,7 @@ final class ShortcutPanelController {
         presentation = Task {
             await viewModel.prepare(mode: mode, availableSize: Self.availableSize(on: screen))
             guard !Task.isCancelled else { return }
-            show(on: screen)
+            show(on: screen, takingKeyboard: mode == .sticky)
         }
     }
 
@@ -74,17 +73,23 @@ final class ShortcutPanelController {
         presentation?.cancel()
         presentation = nil
         presentedMode = nil
-        panel.orderOut(nil)
+        panel.acceptsKeyboard = false
+        panel.orderOut(nil) // The user's app, still active, gets the keyboard back.
         stopMonitoringOutsideClicks()
         viewModel.panelDidClose()
     }
 
     // MARK: Window
 
-    private func show(on screen: NSScreen) {
+    private func show(on screen: NSScreen, takingKeyboard: Bool) {
         place(on: screen)
         setInvisible(false) // A glance may start while the panel is being prerendered.
-        panel.orderFrontRegardless()
+        panel.acceptsKeyboard = takingKeyboard
+        if takingKeyboard {
+            panel.makeKeyAndOrderFront(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
         startMonitoringOutsideClicks()
     }
 

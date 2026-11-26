@@ -34,6 +34,8 @@ public final class ShortcutPanelViewModel {
     public private(set) var displayedLayout: PanelLayout?
     /// Shortcut highlighted for keyboard navigation, if any.
     public private(set) var selection: Shortcut.ID?
+    /// Changes each time a sticky panel opens, so the view can focus its search field.
+    public private(set) var searchSession = 0
 
     /// Asks the panel controller to close the panel.
     @ObservationIgnored public var onClose: (() -> Void)?
@@ -76,6 +78,7 @@ public final class ShortcutPanelViewModel {
         self.availableSize = availableSize
         query = ""
         selection = nil
+        if mode == .sticky { searchSession += 1 }
         guard permission.isGranted else {
             content = .permissionRequired
             return

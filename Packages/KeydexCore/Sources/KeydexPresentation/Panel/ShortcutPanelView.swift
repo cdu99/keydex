@@ -4,11 +4,9 @@ import SwiftUI
 /// Content of the floating shortcut panel.
 public struct ShortcutPanelView: View {
     private let viewModel: ShortcutPanelViewModel
-    private let onClose: () -> Void
 
-    public init(viewModel: ShortcutPanelViewModel, onClose: @escaping () -> Void) {
+    public init(viewModel: ShortcutPanelViewModel) {
         self.viewModel = viewModel
-        self.onClose = onClose
     }
 
     public var body: some View {
@@ -32,8 +30,8 @@ public struct ShortcutPanelView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(app.name)
                         .font(.system(size: 15, weight: .semibold))
-                    if case let .loaded(catalog, _) = viewModel.content {
-                        Text("\(catalog.shortcutCount) raccourcis")
+                    if let count = shownCount {
+                        Text(count)
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
@@ -43,13 +41,16 @@ public struct ShortcutPanelView: View {
             }
             Spacer()
             if viewModel.mode == .sticky {
+                if case .loaded = viewModel.content {
+                    SearchField(viewModel: viewModel)
+                }
                 closeButton
             }
         }
     }
 
     private var closeButton: some View {
-        Button(action: onClose) {
+        Button(action: viewModel.close) {
             Image(systemName: "xmark")
                 .font(.system(size: 12, weight: .semibold))
                 .frame(width: 26, height: 26)
@@ -58,6 +59,13 @@ public struct ShortcutPanelView: View {
         .buttonBorderShape(.circle)
         .help("Fermer (Échap)")
         .accessibilityLabel("Fermer")
+    }
+
+    private var shownCount: String? {
+        guard case let .loaded(catalog, _) = viewModel.content else { return nil }
+        guard !viewModel.query.isEmpty else { return "\(catalog.shortcutCount) raccourcis" }
+        let count = viewModel.displayedShortcuts.count
+        return count == 1 ? "1 résultat" : "\(count) résultats"
     }
 
     private var headerApp: AppInfo? {
@@ -73,12 +81,11 @@ public struct ShortcutPanelView: View {
     @ViewBuilder
     private var mainContent: some View {
         switch viewModel.content {
-        case let .loaded(_, layout):
-            if layout.needsScrolling {
-                ScrollView { columns(layout) }
-                    .scrollIndicators(.automatic)
+        case .loaded:
+            if let layout = viewModel.displayedLayout, !layout.columns.isEmpty {
+                shortcuts(layout)
             } else {
-                columns(layout)
+                message("Aucun raccourci ne correspond à « \(viewModel.query) »", systemImage: "magnifyingglass")
             }
         case .loading:
             ProgressView().controlSize(.small)
@@ -94,14 +101,39 @@ public struct ShortcutPanelView: View {
         }
     }
 
+    @ViewBuilder
+    private func shortcuts(_ layout: PanelLayout) -> some View {
+        if layout.needsScrolling {
+            ScrollViewReader { proxy in
+                ScrollView { columns(layout) }
+                    .onChange(of: viewModel.selection) { _, selection in
+                        if let selection { proxy.scrollTo(selection) }
+                    }
+            }
+        } else {
+            columns(layout)
+        }
+    }
+
     private func columns(_ layout: PanelLayout) -> some View {
         HStack(alignment: .top, spacing: PanelMetrics.columnSpacing) {
             ForEach(layout.columns.indices, id: \.self) { index in
                 VStack(alignment: .leading, spacing: PanelMetrics.groupSpacing) {
-                    ForEach(layout.columns[index]) { ShortcutBlockView(block: $0, width: layout.columnWidth) }
+                    ForEach(layout.columns[index]) {
+                        ShortcutBlockView(block: $0, width: layout.columnWidth, interaction: rowInteraction)
+                    }
                 }
             }
         }
+    }
+
+    private var rowInteraction: RowInteraction? {
+        guard viewModel.mode == .sticky else { return nil }
+        return RowInteraction(
+            selection: viewModel.selection,
+            select: viewModel.select,
+            perform: viewModel.perform
+        )
     }
 
     private func message(_ text: String, systemImage: String) -> some View {

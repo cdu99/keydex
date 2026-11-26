@@ -1,10 +1,18 @@
 import KeydexDomain
 import SwiftUI
 
+/// How rows react to the user, in the sticky panel only (the glance is not interactive).
+struct RowInteraction {
+    let selection: Shortcut.ID?
+    let select: (Shortcut) -> Void
+    let perform: (Shortcut) -> Void
+}
+
 /// One menu of the app (title + its shortcuts), or the part of it shown in one column.
 struct ShortcutBlockView: View {
     let block: PanelLayout.Block
     let width: CGFloat
+    let interaction: RowInteraction?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -13,11 +21,24 @@ struct ShortcutBlockView: View {
                 .foregroundStyle(.secondary)
                 .frame(height: PanelMetrics.groupTitleHeight, alignment: .topLeading)
             ForEach(block.shortcuts) { shortcut in
-                ShortcutRowView(shortcut: shortcut)
+                row(for: shortcut)
                     .frame(height: PanelMetrics.rowHeight)
+                    .id(shortcut.id)
             }
         }
         .frame(width: width, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func row(for shortcut: Shortcut) -> some View {
+        if let interaction {
+            ShortcutRowView(shortcut: shortcut, isSelected: interaction.selection == shortcut.id)
+                .contentShape(Rectangle())
+                .onTapGesture { interaction.perform(shortcut) }
+                .onHover { hovering in if hovering { interaction.select(shortcut) } }
+        } else {
+            ShortcutRowView(shortcut: shortcut, isSelected: false)
+        }
     }
 
     private var title: Text {
@@ -27,9 +48,10 @@ struct ShortcutBlockView: View {
     }
 }
 
-/// An action and its keys, aligned like in a macOS menu.
+/// An action and its keys, aligned like in a macOS menu. Selected like a menu item.
 struct ShortcutRowView: View {
     let shortcut: Shortcut
+    let isSelected: Bool
 
     var body: some View {
         HStack(spacing: 8) {
@@ -40,14 +62,23 @@ struct ShortcutRowView: View {
             KeyComboView(keyCombo: shortcut.keyCombo)
         }
         .font(.system(size: 12.5))
-        .opacity(shortcut.isEnabled ? 1 : 0.4)
+        .opacity(shortcut.isEnabled || isSelected ? 1 : 0.4)
+        .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color.accentColor)
+                    .padding(.horizontal, -5)
+            }
+        }
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var title: Text {
         let submenus = shortcut.menuPath.submenuTitles
         guard !submenus.isEmpty else { return Text(shortcut.title) }
-        let prefix = Text((submenus + [""]).joined(separator: " › ")).foregroundStyle(.secondary)
+        let prefix = Text((submenus + [""]).joined(separator: " › ")).foregroundStyle(isSelected ? .white.opacity(0.75) : .secondary)
         return Text("\(prefix)\(shortcut.title)")
     }
 }
@@ -59,7 +90,7 @@ struct KeyComboView: View {
     var body: some View {
         HStack(spacing: 1) {
             Text(keyCombo.modifiers.symbols.joined())
-                .foregroundStyle(.secondary)
+                .opacity(0.65)
             Text(keyCombo.key.symbol)
                 .frame(minWidth: 14, alignment: .leading)
         }
