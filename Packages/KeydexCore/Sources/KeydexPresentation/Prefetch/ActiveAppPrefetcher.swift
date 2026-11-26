@@ -13,6 +13,9 @@ public final class ActiveAppPrefetcher {
     private let settleDelay: Duration
     private var pendingRead: Task<Void, Never>?
 
+    /// Called on the main actor after an app's shortcuts were read into the cache.
+    public var onPrefetch: ((AppInfo) -> Void)?
+
     public init(
         activeAppProvider: any ActiveAppProviding,
         permission: any AccessibilityPermissionProviding,
@@ -44,7 +47,8 @@ public final class ActiveAppPrefetcher {
         pendingRead = Task { [weak self, settleDelay, store] in
             try? await Task.sleep(for: settleDelay)
             guard !Task.isCancelled, self?.permission.isGranted == true else { return }
-            _ = try? await store.refresh(app)
+            guard (try? await store.refresh(app)) != nil, !Task.isCancelled else { return }
+            self?.onPrefetch?(app)
         }
     }
 }

@@ -33,6 +33,7 @@ final class AppContainer {
         )
         gestureCoordinator.start()
         prefetcher = ActiveAppPrefetcher(activeAppProvider: activeAppProvider, permission: permission, store: store)
+        prefetcher.onPrefetch = { [panelController] _ in panelController.prerender() }
         prefetcher.start()
     }
 }

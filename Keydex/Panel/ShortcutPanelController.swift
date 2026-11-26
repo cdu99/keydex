@@ -39,6 +39,37 @@ final class ShortcutPanelController {
         }
     }
 
+    /// Renders the active app's panel invisibly, so its first glance appears at once.
+    ///
+    /// Laying out and compositing a big panel takes ~100 ms the first time its content is
+    /// drawn. Doing it right after the shortcuts are prefetched (fully transparent and
+    /// click-through, for a fraction of a second) moves that cost out of the glance.
+    func prerender() {
+        guard presentedMode == nil else { return }
+        let screen = Self.screenUnderMouse()
+        Task {
+            await viewModel.prepare(mode: .glance, availableSize: Self.availableSize(on: screen))
+            guard presentedMode == nil else { return }
+            place(on: screen)
+            setInvisible(true)
+            panel.orderFrontRegardless()
+            panel.displayIfNeeded()
+            try? await Task.sleep(for: Self.prerenderDuration)
+            if presentedMode == nil {
+                panel.orderOut(nil)
+                viewModel.panelDidClose()
+            }
+            setInvisible(false)
+        }
+    }
+
+    private static let prerenderDuration = Duration.milliseconds(250)
+
+    private func setInvisible(_ invisible: Bool) {
+        panel.alphaValue = invisible ? 0 : 1
+        panel.ignoresMouseEvents = invisible
+    }
+
     func dismiss() {
         presentation?.cancel()
         presentation = nil
@@ -52,6 +83,7 @@ final class ShortcutPanelController {
 
     private func show(on screen: NSScreen) {
         place(on: screen)
+        setInvisible(false) // A glance may start while the panel is being prerendered.
         panel.orderFrontRegardless()
         startMonitoringOutsideClicks()
     }
