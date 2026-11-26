@@ -6,6 +6,7 @@ import Observation
 @Observable
 public final class SettingsViewModel {
     public let gestureTiming: GestureTimingPreference
+    public let sheets: any SheetLibraryProviding
     public private(set) var launchAtLoginError: String?
 
     @ObservationIgnored private let launchAtLogin: any LaunchAtLoginControlling
@@ -14,9 +15,11 @@ public final class SettingsViewModel {
     public init(
         gestureTiming: GestureTimingPreference,
         launchAtLogin: any LaunchAtLoginControlling,
-        permission: any AccessibilityPermissionProviding
+        permission: any AccessibilityPermissionProviding,
+        sheets: any SheetLibraryProviding
     ) {
         self.gestureTiming = gestureTiming
+        self.sheets = sheets
         self.launchAtLogin = launchAtLogin
         self.permission = permission
     }

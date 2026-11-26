@@ -1,3 +1,4 @@
+import Foundation
 import KeydexDomain
 import KeydexPresentation
 import Synchronization
@@ -24,6 +25,13 @@ private final class StubLaunchAtLogin: LaunchAtLoginControlling {
 }
 
 @MainActor
+private final class StubSheetLibrary: SheetLibraryProviding {
+    var summaries: [SheetSummary] = []
+    let userFolder = URL(fileURLWithPath: "/tmp/keydex")
+    func openUserFolder() {}
+}
+
+@MainActor
 @Suite("Settings")
 struct SettingsViewModelTests {
     private let store = InMemoryTimingStore()
@@ -33,7 +41,8 @@ struct SettingsViewModelTests {
         SettingsViewModel(
             gestureTiming: GestureTimingPreference(store: store),
             launchAtLogin: launchAtLogin,
-            permission: StubPermission(granted: true)
+            permission: StubPermission(granted: true),
+            sheets: StubSheetLibrary()
         )
     }
 

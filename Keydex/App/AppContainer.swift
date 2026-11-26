@@ -48,7 +48,8 @@ final class AppContainer {
         settings = SettingsViewModel(
             gestureTiming: gestureTiming,
             launchAtLogin: SMAppServiceLaunchAtLogin(),
-            permission: permission
+            permission: permission,
+            sheets: sheetLibrary
         )
         gestureCoordinator = CommandGestureCoordinator(
             timing: gestureTiming,

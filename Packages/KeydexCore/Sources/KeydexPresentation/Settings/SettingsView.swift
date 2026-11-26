@@ -13,6 +13,7 @@ public struct SettingsView: View {
         Form {
             gestureSection
             launchSection
+            sheetsSection
             permissionSection
             privacySection
         }
@@ -62,6 +63,25 @@ public struct SettingsView: View {
             if let error = viewModel.launchAtLoginError {
                 Text(error).foregroundStyle(.red)
             }
+        }
+    }
+
+    private var sheetsSection: some View {
+        Section {
+            ForEach(viewModel.sheets.summaries) { SheetRow(summary: $0) }
+            HStack {
+                Text(viewModel.sheets.userFolder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                    .font(.callout.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                Spacer()
+                Button("Ouvrir le dossier", action: viewModel.sheets.openUserFolder)
+            }
+        } header: {
+            Text("Fiches de raccourcis")
+        } footer: {
+            Text("Les fiches ajoutent les raccourcis qui ne sont dans aucun menu. Dépose un fichier Markdown dans ce dossier : il est pris en compte dès l'enregistrement. Un fichier du même nom qu'une fiche intégrée la remplace.")
+                .foregroundStyle(.secondary)
         }
     }
 
