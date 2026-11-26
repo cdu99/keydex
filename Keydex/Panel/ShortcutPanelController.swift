@@ -111,15 +111,24 @@ final class ShortcutPanelController {
         panel.setFrame(CGRect(origin: origin, size: size).integral, display: true)
     }
 
-    /// Cached content is shown first, then refreshed: follow size changes while visible.
+    /// Resizes the visible panel without moving its header (and search field).
+    private func resizeKeepingTopEdge() {
+        let size = viewModel.preferredSize
+        let frame = panel.frame
+        let resized = CGRect(x: frame.midX - size.width / 2, y: frame.maxY - size.height, width: size.width, height: size.height)
+        panel.setFrame(resized.integral, display: true)
+    }
+
+    /// Content changes while visible (fresh shortcuts after the cached ones, search results):
+    /// follow its size.
     private func resizeWhenContentChanges() {
         withObservationTracking {
             _ = viewModel.preferredSize
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                if panel.isVisible, let screen = panel.screen {
-                    place(on: screen)
+                if panel.isVisible {
+                    resizeKeepingTopEdge()
                 }
                 resizeWhenContentChanges()
             }

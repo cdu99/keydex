@@ -35,12 +35,25 @@ struct PanelSearchTests {
         #expect(viewModel.selection == viewModel.displayedShortcuts.first?.id)
     }
 
-    @Test("The panel keeps its size while filtering")
-    func stableSize() async {
-        let viewModel = await makeViewModel()
-        let size = viewModel.preferredSize
-        viewModel.query = "fichier 1"
-        #expect(viewModel.preferredSize == size)
+    @Test("While filtering, the panel keeps its width and fits its height to the results")
+    func sizeWhileFiltering() async {
+        let groups = (0..<6).map { Fixtures.group("Menu \($0)", index: $0, rows: 12) }
+        let viewModel = ShortcutPanelViewModel(
+            activeAppProvider: StubActiveApp(Fixtures.app),
+            permission: StubPermission(granted: true),
+            store: ShortcutCatalogStore(source: StubShortcutSource(result: .success(groups))),
+            performer: performer
+        )
+        await viewModel.prepare(mode: .sticky, availableSize: Fixtures.screen)
+        let fullSize = viewModel.preferredSize
+
+        viewModel.query = "menu 1 1"
+        #expect(viewModel.preferredSize.width == fullSize.width)
+        #expect(viewModel.preferredSize.height < fullSize.height)
+        #expect(viewModel.preferredSize.height >= PanelMetrics.messageSize.height)
+
+        viewModel.query = ""
+        #expect(viewModel.preferredSize == fullSize)
     }
 
     @Test("No result shows an empty layout")

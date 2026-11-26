@@ -63,8 +63,14 @@ public final class ShortcutPanelViewModel {
     }
 
     /// Size the panel window should have for the current content.
+    ///
+    /// While searching, the width stays the same (the search field does not move) and the
+    /// height shrinks to the results, so a few results do not float in an empty panel.
     public var preferredSize: CGSize {
-        if case let .loaded(_, layout) = content { layout.panelSize } else { PanelMetrics.messageSize }
+        guard case let .loaded(_, fullLayout) = content else { return PanelMetrics.messageSize }
+        guard !ShortcutQuery(query).isEmpty, let results = displayedLayout else { return fullLayout.panelSize }
+        let height = max(results.panelSize.height, PanelMetrics.messageSize.height)
+        return CGSize(width: fullLayout.panelSize.width, height: min(height, fullLayout.panelSize.height))
     }
 
     /// Prepares the content for the active app, laid out to fit `availableSize`.
