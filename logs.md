@@ -38,7 +38,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 | 1 | Cœur : lecture des raccourcis de l'app active (Accessibilité) | ✅ |
 | 2 | Panneau (Liquid Glass, groupes par menu, colonnes adaptatives) | ✅ |
 | 3 | Geste ⌘ maintenu (coup d'œil) + double appui | ✅ |
-| 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ⏳ |
+| 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ✅ |
 | 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ⏳ |
 | 6 | Réglages, lancement au démarrage, accueil des permissions | ⏳ |
 | 7 | (après v1) Fiches perso par app et fiche système, rechargées à chaud | ⏳ |
@@ -187,3 +187,27 @@ Une capture de Finder sur l'écran 14" montrait des menus **coupés en bas**. Un
   - Les colonnes sont équilibrées par recherche binaire.
 - **Vérifié par capture** : Finder (118 raccourcis) tient en 4 colonnes et IntelliJ (161) en 5, sans défilement, sur l'écran 14".
 - **À améliorer plus tard** : en colonnes étroites, les titres préfixés d'un sous-menu sont tronqués au milieu (« Code Compl…rent Statement »). Il faudrait privilégier le nom de l'action.
+
+### Étape 4 — Performance ✅ (2026-11-26)
+**Constats (mesurés)**
+- IntelliJ ne répond vite (32 ms) que s'il a été interrogé il y a moins de ~300 ms. Sinon, une lecture coûte **~140 ms**, exécutés sur **son** fil principal. On ne peut donc pas relire à chaque appui sur ⌘ (⌘C, ⌘S…) sans risquer de ralentir IntelliJ.
+- Avant cette étape, un coup d'œil apparaissait **640 à 880 ms** après l'appui sur ⌘, pour un délai réglé à 500 ms. Les causes : la lecture AX, le premier rendu du contenu (70 à 150 ms) et un minuteur retardé par macOS (jusqu'à 90 ms, App Nap et regroupement des minuteurs).
+
+**Fait** (commits atomiques)
+- `feat(domain)` : `ShortcutCatalogStore` (actor), un cache par app (LRU, 12 apps). Les lectures simultanées d'une même app sont fusionnées, les échecs ne sont pas mis en cache, et un PID réutilisé par une autre app est ignoré.
+- `feat(panel)` : le panneau affiche **immédiatement** le contenu du cache, puis le rafraîchit en arrière-plan (menus ou états grisés modifiés) et se redimensionne si besoin.
+- `refactor(domain)` : suppression de `LoadShortcutCatalog`, remplacé par le cache.
+- `feat(presentation)` + `feat(app)` : `ActiveAppPrefetcher` lit l'app sur laquelle tu **restes** ~1 s. Les apps traversées avec ⌘Tab ne sont pas lues.
+- `fix(gesture)` : tolérance de 5 ms sur le minuteur du geste.
+- `perf(panel)` : **pré-rendu** du panneau (transparent, sans clic, 250 ms) juste après le préchargement. Côté Keydex, le coup d'œil passe de 148 ms à environ 15 ms.
+- `feat(dump)` : option `--pause` pour observer le cache côté app.
+
+**Résultat** : apparition **~580 à 600 ms** après l'appui sur ⌘, dont 500 ms de délai volontaire, contre 640 à 880 ms avant. Le reste vient de l'arrivée de l'événement (~12 ms) et de la composition par le serveur de fenêtres, que la mesure elle-même ralentit.
+**Légèreté** : 0 % CPU au repos, ~120 Mo de mémoire (build Debug).
+**Tests** : 65 au total (cache, fusion des lectures, LRU, préchargement, affichage du cache puis rafraîchissement).
+
+**À tester**
+1. `make run`. Passe sur IntelliJ, attends 1 s, puis maintiens ⌘ : le panneau apparaît dès la fin du délai, sans latence visible.
+2. Sur une app jamais ouverte depuis le lancement de Keydex, ⌘ tout de suite : le panneau apparaît après la première lecture (un peu plus lent, c'est normal).
+3. Dans une app, sélectionne du texte ou non, puis maintiens ⌘ : l'état grisé de Copier/Couper se met à jour (après un court instant si le cache était périmé).
+4. ⌘Tab rapide entre plusieurs apps : rien ne doit ralentir.
