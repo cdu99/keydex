@@ -27,7 +27,8 @@ public struct MenuBarDiagnostics: Sendable {
         }
         if let key = item.commandVirtualKey { fields.append("vkey=\(key)") }
         if let glyph = item.commandGlyph, glyph != 0 { fields.append("glyph=\(glyph)") }
-        if let modifiers = item.commandModifiers, item.commandCharacter != nil || item.commandGlyph ?? 0 != 0 {
+        let hasKey = item.commandCharacter != nil || item.commandVirtualKey != nil || item.commandGlyph ?? 0 != 0
+        if let modifiers = item.commandModifiers, hasKey {
             fields.append("mods=\(modifiers)")
         }
         if !item.isEnabled { fields.append("disabled") }

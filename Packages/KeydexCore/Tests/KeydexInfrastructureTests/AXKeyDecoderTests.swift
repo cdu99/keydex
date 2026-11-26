@@ -15,6 +15,8 @@ struct AXKeyDecoderTests {
         (8, []),
         (8 | 4, [.control]),
         (8 | 2 | 1, [.option, .shift]),
+        (28, [.function, .control]), // Window › Fill: fn ⌃ F
+        (16, [.function, .command]),
     ] as [(Int, ModifierSet)])
     func modifiers(raw: Int, expected: ModifierSet) {
         #expect(AXKeyDecoder.modifiers(fromMenuModifiers: raw) == expected)

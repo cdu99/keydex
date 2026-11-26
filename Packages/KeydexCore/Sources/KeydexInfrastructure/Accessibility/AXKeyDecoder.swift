@@ -29,12 +29,14 @@ enum AXKeyDecoder {
     // MARK: Modifiers
 
     /// Carbon menu modifier flags (`kAXMenuItemModifier*`). ⌘ is implied unless
-    /// `kAXMenuItemModifierNoCommand` is set.
+    /// `kAXMenuItemModifierNoCommand` is set. Bit 4 (fn / 🌐) is undocumented but reported by
+    /// macOS, e.g. for Window › Fill (fn ⌃ F): observed value 28 = fn + no ⌘ + ⌃.
     static func modifiers(fromMenuModifiers raw: Int) -> ModifierSet {
         var modifiers: ModifierSet = raw & kAXMenuItemModifierNoCommand == 0 ? .command : []
         if raw & kAXMenuItemModifierShift != 0 { modifiers.insert(.shift) }
         if raw & kAXMenuItemModifierOption != 0 { modifiers.insert(.option) }
         if raw & kAXMenuItemModifierControl != 0 { modifiers.insert(.control) }
+        if raw & menuModifierFunction != 0 { modifiers.insert(.function) }
         return modifiers
     }
 
@@ -42,6 +44,7 @@ enum AXKeyDecoder {
     private static let kAXMenuItemModifierOption = 1 << 1
     private static let kAXMenuItemModifierControl = 1 << 2
     private static let kAXMenuItemModifierNoCommand = 1 << 3
+    private static let menuModifierFunction = 1 << 4
 
     // MARK: Characters
 
