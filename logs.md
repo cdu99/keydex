@@ -41,7 +41,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 | 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ✅ |
 | 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ✅ |
 | 6 | Réglages, lancement au démarrage, accueil des permissions | ✅ |
-| 7 | (après v1) Fiches perso par app et fiche système, rechargées à chaud | ⏳ |
+| 7 | Fiches de raccourcis (Markdown, rechargées à chaud, générées par commande) | ✅ |
 
 ### Limites macOS connues
 - **Focus en mode recherche** : pour taper, le panneau doit recevoir le clavier. Il est non activant : l'app reste active (sa barre de menus reste affichée) et retrouve le clavier à la fermeture.
@@ -295,3 +295,70 @@ Toutes les fonctionnalités v1 des specs sont en place. Côté qualité : 97 tes
 3. Équivalences Windows/Linux → Mac (« Ctrl+Shift+F » → « ⌘⇧F »), recherchables dans le panneau.
 4. Mise en avant des raccourcis pas encore utilisés.
 5. Petites améliorations : privilégier le nom de l'action quand il est tronqué ; touches en « keycaps ».
+
+## Après la v1
+
+### Icône, README open source, licence (2026-11-26)
+- **Icône Liquid Glass** au format Icon Composer (`Keydex/Resources/AppIcon.icon`), générée par `scripts/make-app-icon.swift` : un panneau de raccourcis en verre et une touche ⌘. Variantes sombre et teintée gérées par macOS.
+- **README open source** : captures réelles (nom de session masqué par OCR local, vérifié), fonctionnalités, syntaxe de recherche, installation, confidentialité, limites, roadmap, schéma Mermaid. **Licence MIT**.
+- `feat(panel)` : en recherche, le panneau ajuste sa hauteur aux résultats (ancré en haut, le champ ne bouge pas).
+
+### Étape 7 — Fiches de raccourcis ✅ (2026-11-26)
+**Constat** : Ghostty ne met que 61 de ses 93 raccourcis dans ses menus. Il en manque une partie (⌘K, ⌘↑ / ⌘↓ pour les prompts…) et surtout ceux qui **envoient des touches au shell** (⌥← / ⌥→ mot par mot, ⌘← / ⌘→, ⌘⌫). Ceux de zsh (⌃W, ⌃U, ⌥D…) n'appartiennent même pas à Ghostty.
+
+**Principe retenu** (à ta demande) : le code de Keydex est **générique** et ne nomme aucune app. Tout ce qui est propre à une app vit dans des **fiches** :
+- **écrites à la main** : un fichier Markdown ;
+- **générées par une commande** : la fiche déclare `command:` et la sortie de la commande est elle-même une fiche.
+
+**Fait** (commits atomiques)
+- `refactor(domain)` : un raccourci n'est plus forcément un item de menu. Il a un `id` et un contexte, et `menuPath` est optionnel (seuls les items de menu sont exécutables). Les groupes ont une nature (menu ou fiche).
+- `refactor(domain)` + `feat(domain)` : tokenizer partagé, et `KeyComboParser` (« ⌃W », « ctrl+w », « cmd shift f », « ⌘+ »…).
+- `feat(domain)` : `ShortcutSheet` et son analyseur Markdown :
+  - en-tête : `# Titre`, `apps:`, `command:` ;
+  - sections `##` ;
+  - entrées en liste ou en tableau, texte libre permis ;
+  - lignes illisibles signalées avec leur numéro.
+- `feat(domain)` : `SheetAugmentedShortcutSource` ajoute aux menus les fiches qui s'appliquent à l'app.
+  - Priorités : **menus**, puis **fiches de l'app**, puis **fiches générales**. Une combinaison n'apparaît qu'une fois.
+  - Une app sans barre de menus affiche quand même ses fiches.
+- `feat(infra)` : `DirectorySheetProvider` (fiches intégrées puis `~/.config/keydex` ; un fichier du même nom remplace la fiche intégrée) et `DirectoryWatcher` (FSEvents) pour le **rechargement à chaud**.
+- `feat(infra)` : **exécution des commandes**.
+  - Lancement via `/bin/sh` depuis le dossier de la fiche, avec les variables `KEYDEX_APP_NAME/BUNDLE_ID/PATH/PID`.
+  - La commande ne tourne que pour les apps de sa fiche : délai maximal de 2 s, cache de 2 s.
+  - La sortie passe par un fichier, pour qu'un processus resté en arrière-plan ne bloque rien. Si la commande échoue, la fiche est affichée telle qu'écrite.
+- `feat(infra)` : `SheetLibrary` (liste des fiches chargées, port `SheetLibraryProviding`).
+- `feat(panel)` : les groupes de fiches sont distingués (icône document, titre teinté). Ils sont lisibles mais pas exécutables : la sélection est grise et ↩ ne fait rien.
+- `feat(panel)` : les **fiches générales** (macOS) sont exclues du coup d'œil et trouvées par la recherche. Le coup d'œil de Ghostty était passé à 158 raccourcis et débordait de l'écran.
+- `feat(panel)` : en recherche, les résultats se répartissent sur plus de colonnes, pour garder le panneau bas.
+- `feat(settings)` : section **Fiches de raccourcis**.
+  - Chaque fiche y apparaît : apps, nombre de raccourcis, intégrée ou perso, lignes illisibles, **commande exécutée**.
+  - Le dossier perso s'ouvre d'un bouton.
+- **Fiches livrées** (`sheets/`, copié dans l'app) :
+  - `zsh.md` : édition de ligne, pour les terminaux ;
+  - `macos.md` : Spaces, Mission Control, captures d'écran, texte, session ;
+  - `ghostty.md` + `ghostty.sh` : un script `sh` + `awk` qui traduit `ghostty +list-keybinds`.
+- `refactor(infra)` : **suppression du code Swift propre à Ghostty**, remplacé par la fiche générée.
+- `feat(dump)` : `--check-sheet <fichier | ->` valide une fiche, ou la sortie d'un script via l'entrée standard.
+- `docs` : `docs/SHEETS.md` (guide complet, fiches générées, sécurité), `CONTRIBUTING.md`, README.
+- Tests : **133**. Ils couvrent l'analyseur, les priorités, le chargement, le watcher en réel, les commandes réelles (échec, lenteur, processus en arrière-plan, cache) et le script Ghostty sur la sortie réelle enregistrée.
+
+**Vérifié en réel** :
+- dans Ghostty, la recherche « mot » trouve ⌥← / ⌥→ (Ghostty) et ⌃W, ⌥⌫, ⌥D (zsh) ;
+- « envoie » liste les touches de la ligne de commande générées par le script ;
+- une fiche ajoutée dans `~/.config/keydex` apparaît sans relancer l'app, puis disparaît une fois supprimée.
+
+**Décisions**
+- Les commandes ne peuvent venir que des fiches intégrées (relues en pull request) ou du dossier de l'utilisateur, et sont toujours visibles dans les Réglages.
+- Une entrée de fiche = une combinaison. Les séquences (« ⌃X puis ⌃K », préfixe tmux) ne sont pas encore gérées.
+
+**À tester**
+1. `make run`. Dans Ghostty, double ⌘ puis tape « mot », « prompt », « split » : les raccourcis de Ghostty et de zsh apparaissent, marqués d'une icône de document.
+2. Crée `~/.config/keydex/test.md` :
+   ```
+   # Test
+   apps: Ghostty
+   - `⌃⌥⌘T` Mon raccourci
+   ```
+   Il apparaît au prochain coup d'œil, sans relancer l'app. Supprime le fichier : il disparaît.
+3. Réglages → **Fiches de raccourcis** : les fiches sont listées, et la commande de Ghostty (`sh ./ghostty.sh`) est visible.
+4. Ajoute un raccourci dans ta config Ghostty (ex. `keybind = super+shift+k=clear_screen`) : il apparaît au coup d'œil suivant.
