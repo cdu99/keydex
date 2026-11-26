@@ -8,6 +8,8 @@ public struct PanelLayout: Equatable, Sendable {
         public let title: String
         /// True when this block continues a menu started in the previous column.
         public let isContinuation: Bool
+        /// Menu shortcuts, or shortcuts documented in a sheet.
+        public let kind: ShortcutGroup.Kind
         public let shortcuts: [Shortcut]
         public let id: String
     }
@@ -48,6 +50,7 @@ public struct PanelLayout: Equatable, Sendable {
                 return Block(
                     title: group.title,
                     isContinuation: segment.rows.lowerBound > 0,
+                    kind: group.kind,
                     shortcuts: Array(group.shortcuts[segment.rows]),
                     id: "\(group.id)-\(segment.rows.lowerBound)"
                 )

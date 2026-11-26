@@ -143,8 +143,9 @@ public final class ShortcutPanelViewModel {
     }
 
     /// Closes the panel, gives the keyboard back to the app, then triggers the action in it.
+    /// Documented shortcuts (from sheets) are not menu items: nothing to run.
     public func perform(_ shortcut: Shortcut) {
-        guard case let .loaded(catalog, _) = content else { return }
+        guard shortcut.isPerformable, case let .loaded(catalog, _) = content else { return }
         close()
         let app = catalog.app
         let performer = performer

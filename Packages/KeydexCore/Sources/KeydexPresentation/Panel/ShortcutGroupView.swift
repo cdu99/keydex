@@ -16,9 +16,8 @@ struct ShortcutBlockView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            title
+            header
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
                 .frame(height: PanelMetrics.groupTitleHeight, alignment: .topLeading)
             ForEach(block.shortcuts) { shortcut in
                 row(for: shortcut)
@@ -35,9 +34,26 @@ struct ShortcutBlockView: View {
             ShortcutRowView(shortcut: shortcut, isSelected: interaction.selection == shortcut.id)
                 .contentShape(Rectangle())
                 .onTapGesture { interaction.perform(shortcut) }
+                .help(shortcut.isPerformable ? "" : "Raccourci documenté : à faire au clavier, Keydex ne peut pas l'exécuter.")
                 .onHover { hovering in if hovering { interaction.select(shortcut) } }
         } else {
             ShortcutRowView(shortcut: shortcut, isSelected: false)
+        }
+    }
+
+    /// Sheet groups are marked (icon, tint): their shortcuts are in no menu.
+    @ViewBuilder
+    private var header: some View {
+        switch block.kind {
+        case .menu:
+            title.foregroundStyle(.secondary)
+        case .sheet:
+            HStack(spacing: 4) {
+                Image(systemName: "doc.text")
+                title
+            }
+            .foregroundStyle(.tint)
+            .help("Raccourcis documentés dans une fiche : ils ne figurent dans aucun menu.")
         }
     }
 
@@ -66,8 +82,9 @@ struct ShortcutRowView: View {
         .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
         .background {
             if isSelected {
+                // Grey for documented shortcuts: they can be read, not run.
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color.accentColor)
+                    .fill(shortcut.isPerformable ? Color.accentColor : Color.gray)
                     .padding(.horizontal, -5)
             }
         }

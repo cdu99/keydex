@@ -97,4 +97,25 @@ struct PanelSearchTests {
         #expect(viewModel.query.isEmpty)
         #expect(viewModel.displayedShortcuts.count == 6)
     }
+
+    @Test("Documented shortcuts (sheets) can be selected but not run")
+    func documentedShortcut() async throws {
+        let documented = Shortcut(id: "sheet:zsh:0:0", title: "Effacer le mot", keyCombo: KeyComboParser.parse("⌃W")!)
+        let sheetGroup = ShortcutGroup(id: "sheet:zsh:0", title: "zsh · Mots", kind: .sheet, shortcuts: [documented])
+        let viewModel = ShortcutPanelViewModel(
+            activeAppProvider: StubActiveApp(Fixtures.app),
+            permission: StubPermission(granted: true),
+            store: ShortcutCatalogStore(source: StubShortcutSource(result: .success([sheetGroup]))),
+            performer: performer
+        )
+        await viewModel.prepare(mode: .sticky, availableSize: Fixtures.screen)
+        var closed = false
+        viewModel.onClose = { closed = true }
+        viewModel.query = "mot"
+        #expect(viewModel.selection == documented.id)
+        viewModel.performSelection()
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(!closed)
+        #expect(performer.performedTitles.isEmpty)
+    }
 }
