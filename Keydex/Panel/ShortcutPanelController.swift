@@ -23,10 +23,12 @@ final class ShortcutPanelController {
         panel.contentView = hostingView
     }
 
-    var isVisible: Bool { panel.isVisible }
+    /// Mode of the panel being shown (or loading), `nil` when hidden.
+    private(set) var presentedMode: ShortcutPanelViewModel.Mode?
 
     func present(mode: ShortcutPanelViewModel.Mode) {
         presentation?.cancel()
+        presentedMode = mode
         let screen = Self.screenUnderMouse()
         presentation = Task {
             await viewModel.prepare(mode: mode, availableSize: Self.availableSize(on: screen))
@@ -38,6 +40,7 @@ final class ShortcutPanelController {
     func dismiss() {
         presentation?.cancel()
         presentation = nil
+        presentedMode = nil
         panel.orderOut(nil)
         stopMonitoringOutsideClicks()
     }

@@ -35,7 +35,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 | 0 | Squelette : app de barre de menus, package, Makefile | ✅ |
 | 1 | Cœur : lecture des raccourcis de l'app active (Accessibilité) | ✅ |
 | 2 | Panneau (Liquid Glass, groupes par menu, colonnes adaptatives) | ✅ |
-| 3 | Geste ⌘ maintenu (coup d'œil) | ⏳ |
+| 3 | Geste ⌘ maintenu (coup d'œil) + double appui | ✅ |
 | 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ⏳ |
 | 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ⏳ |
 | 6 | Réglages, lancement au démarrage, accueil des permissions | ⏳ |
@@ -146,3 +146,32 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 4. L'app d'origine garde le focus : sa barre de menus reste affichée et la frappe va toujours dans l'app.
 5. Réglages › Accessibilité › Affichage › **Réduire la transparence** : le fond devient opaque.
 6. Essaie IntelliJ (beaucoup de menus) et un petit écran : tout doit tenir sans défiler dans la plupart des cas.
+
+### Étape 3 — Geste ⌘ ✅ (2026-11-26)
+**Fait**
+- **Domaine** :
+  - `CommandGestureRecognizer`, une machine à états **pure** (sans horloge ni AppKit) qui reçoit des `InputEvent` et renvoie des effets (`startTimer`, `cancelTimer`, `showGlance`, `hideGlance`, `showSticky`).
+  - `GestureTiming` : délai du coup d'œil 0,5 s, intervalle du double appui 0,3 s, maintien du 2ᵉ appui 0,15 s. Ces valeurs seront réglables à l'étape 6.
+  - Port `InputEventMonitoring`.
+- **Règles** :
+  - Seul ⌘ maintenu **seul** déclenche le panneau.
+  - Une touche, un clic, un scroll ou un autre modificateur annule le geste **jusqu'au relâchement de toutes les touches**. ⌘C, ⌘Tab, ⇧⌘…, ⌘-clic ne montrent donc jamais le panneau.
+  - Une touche tapée pendant le coup d'œil le cache et le raccourci passe normalement.
+  - Un double appui suivi d'un maintien ouvre le panneau **sticky**, qui reste après le relâchement.
+  - Un coup d'œil ne remplace jamais un panneau sticky ouvert.
+- **Infrastructure** : `NSEventInputMonitor` (monitors globaux et locaux, **en lecture seule** : les événements ne sont jamais interceptés).
+- **App** : `CommandGestureCoordinator` exécute le minuteur et applique les effets au panneau. Il réinstalle les monitors quand la permission change.
+- **Tests** : 52 au total. Le simulateur de chronologie couvre 16 scénarios : ⌘ maintenu, ⌘C, ⌘Tab, touche tardive, ⌘-clic, ⇧⌘ / ⌥⌘ / ⌃⌘ / fn⌘, ⇧ puis ⌘, double appui (réussi, trop lent, 1ᵉʳ appui trop long, relâché trop tôt), ⌘C puis ⌘V, minuteur périmé.
+
+**Vérifié en réel** (événements simulés via `CGEvent`) : 9 scénarios OK, dont le coup d'œil, ⌘+touche, la touche tardive, le double appui et le sticky qui survit à un coup d'œil.
+
+**Limite constatée** : pendant que le menu de Keydex lui-même est ouvert, le minuteur ne se déclenche pas. Sans impact en usage normal.
+
+**À tester**
+1. `make run`, puis dans n'importe quelle app :
+   - **maintiens ⌘** : le panneau apparaît après ½ s ;
+   - **relâche** : il disparaît.
+2. Fais tes raccourcis habituels (⌘C, ⌘V, ⌘Tab maintenu, ⌘⇧T, ⌘-clic) : le panneau ne doit **jamais** apparaître.
+3. Maintiens ⌘ jusqu'au panneau, puis tape une touche (ex. ⌘W) : le panneau disparaît et le raccourci fonctionne.
+4. **Double appui ⌘ puis maintien** : le panneau reste après le relâchement, avec le ✕. Ferme-le avec ✕ ou un clic ailleurs (Échap arrive à l'étape 5).
+5. Dis-moi si ½ s te paraît trop long ou trop court (réglable à l'étape 6).
