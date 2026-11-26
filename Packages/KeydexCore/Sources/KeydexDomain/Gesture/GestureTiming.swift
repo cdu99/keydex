@@ -16,4 +16,25 @@ public struct GestureTiming: Equatable, Sendable {
     }
 
     public static let standard = GestureTiming(glanceDelay: 0.5, doubleTapInterval: 0.3, stickyHoldDelay: 0.15)
+
+    /// Values the user may choose. Below these, regular shortcuts would trigger the panel;
+    /// above, the gestures would feel sluggish.
+    public static let glanceDelayRange: ClosedRange<TimeInterval> = 0.2...1.5
+    public static let doubleTapIntervalRange: ClosedRange<TimeInterval> = 0.15...0.5
+
+    /// The same timing with user-adjustable delays brought back within their ranges
+    /// (settings may come from an older version or be edited by hand).
+    public func clamped() -> GestureTiming {
+        GestureTiming(
+            glanceDelay: glanceDelay.clamped(to: Self.glanceDelayRange),
+            doubleTapInterval: doubleTapInterval.clamped(to: Self.doubleTapIntervalRange),
+            stickyHoldDelay: stickyHoldDelay
+        )
+    }
+}
+
+private extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
+    }
 }
