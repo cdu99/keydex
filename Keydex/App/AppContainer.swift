@@ -10,6 +10,7 @@ final class AppContainer {
     let permission: any AccessibilityPermissionProviding
     let panelController: ShortcutPanelController
     let gestureTiming: GestureTimingPreference
+    let settings: SettingsViewModel
     private let gestureCoordinator: CommandGestureCoordinator
     private let prefetcher: ActiveAppPrefetcher
 
@@ -29,6 +30,11 @@ final class AppContainer {
         self.permission = permission
         self.panelController = panelController
         self.gestureTiming = gestureTiming
+        settings = SettingsViewModel(
+            gestureTiming: gestureTiming,
+            launchAtLogin: SMAppServiceLaunchAtLogin(),
+            permission: permission
+        )
         gestureCoordinator = CommandGestureCoordinator(
             timing: gestureTiming,
             inputMonitor: NSEventInputMonitor(),

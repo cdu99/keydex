@@ -8,6 +8,8 @@ struct StatusMenu: View {
     let permission: any AccessibilityPermissionProviding
     let showPanel: () -> Void
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some View {
         if permission.isGranted {
             Button(showShortcutsTitle, action: showPanel)
@@ -20,8 +22,17 @@ struct StatusMenu: View {
             }
         }
         Divider()
+        Button("Réglages…") { open(WindowID.settings) }
+            .keyboardShortcut(",")
+        Divider()
         Button("Quitter Keydex") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    /// Keydex has no Dock icon: bring the window to the front explicitly.
+    private func open(_ windowID: String) {
+        openWindow(id: windowID)
+        NSApp.activate()
     }
 
     private var showShortcutsTitle: String {

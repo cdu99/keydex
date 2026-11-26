@@ -1,3 +1,4 @@
+import KeydexPresentation
 import SwiftUI
 
 @main
@@ -12,5 +13,15 @@ struct KeydexApp: App {
                 showPanel: { container.panelController.present(mode: .sticky) }
             )
         }
+
+        Window("Réglages de Keydex", id: WindowID.settings) {
+            SettingsView(viewModel: container.settings)
+        }
+        .windowResizability(.contentSize)
+        .defaultLaunchBehavior(.suppressed)
     }
+}
+
+enum WindowID {
+    static let settings = "settings"
 }
