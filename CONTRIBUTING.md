@@ -4,7 +4,9 @@ Thanks for your interest! Contributions of every size are welcome.
 
 ## The easiest one: a shortcut sheet
 
-Know the shortcuts of an app or a tool that are not in its menus (tmux, vim, a terminal, an IDE)? Write them down as a **sheet**, a small Markdown file, and add it to [`sheets/`](sheets). No Swift needed. See [docs/SHEETS.md](docs/SHEETS.md).
+Know the shortcuts of an app or a tool that are not in its menus (tmux, vim, a terminal, an IDE)? Write them down as a **sheet**, a small Markdown file, and add it to [`sheets/`](sheets). If the tool can list its own shortcuts, the sheet can **generate** them with a small script instead. No Swift needed. See [docs/SHEETS.md](docs/SHEETS.md).
+
+Keydex's code is generic on purpose: please keep app-specific knowledge in sheets, not in Swift.
 
 ## Code
 
