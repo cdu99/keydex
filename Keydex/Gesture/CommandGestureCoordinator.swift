@@ -59,7 +59,7 @@ final class CommandGestureCoordinator {
         case let .startTimer(delay, id):
             timer?.cancel()
             timer = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(delay))
+                try? await Task.sleep(for: .seconds(delay), tolerance: .milliseconds(5))
                 guard !Task.isCancelled, let self else { return }
                 apply(recognizer.timerFired(id: id))
             }
