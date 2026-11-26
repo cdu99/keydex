@@ -4,6 +4,7 @@ import SwiftUI
 /// One menu of the app (title + its shortcuts), as a block of a panel column.
 struct ShortcutGroupView: View {
     let group: ShortcutGroup
+    let width: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -16,7 +17,7 @@ struct ShortcutGroupView: View {
                     .frame(height: PanelMetrics.rowHeight)
             }
         }
-        .frame(width: PanelMetrics.columnWidth, alignment: .leading)
+        .frame(width: width, alignment: .leading)
     }
 }
 

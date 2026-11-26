@@ -8,7 +8,9 @@ public enum PanelMetrics {
     public static let padding: CGFloat = 18
     public static let headerHeight: CGFloat = 36
     public static let headerSpacing: CGFloat = 14
-    public static let columnWidth: CGFloat = 268
+    /// Preferred column widths, widest first. Narrower columns are only used when the
+    /// wide ones would not fit the screen, to fit more columns instead of scrolling.
+    public static let columnWidths: [CGFloat] = [268, 236, 212]
     public static let columnSpacing: CGFloat = 22
     public static let groupSpacing: CGFloat = 14
     public static let groupTitleHeight: CGFloat = 20

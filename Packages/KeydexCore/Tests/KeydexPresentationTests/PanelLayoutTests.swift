@@ -9,7 +9,8 @@ struct PanelLayoutTests {
         let layout = PanelLayout(groups: [Fixtures.group("Fichier", index: 1, rows: 5)], availableSize: Fixtures.screen)
         #expect(layout.columns.count == 1)
         #expect(!layout.needsScrolling)
-        #expect(layout.panelSize.width == 2 * PanelMetrics.padding + PanelMetrics.columnWidth)
+        #expect(layout.columnWidth == PanelMetrics.columnWidths[0], "Widest columns when they fit")
+        #expect(layout.panelSize.width == 2 * PanelMetrics.padding + layout.columnWidth)
         #expect(layout.panelSize.height == PanelMetrics.chromeHeight + PanelMetrics.groupHeight(rowCount: 5))
     }
 
@@ -22,6 +23,16 @@ struct PanelLayoutTests {
         #expect(layout.panelSize.height <= Fixtures.screen.height)
         #expect(layout.panelSize.width <= Fixtures.screen.width)
         #expect(layout.columns.flatMap { $0 }.map(\.menuIndex) == Array(0..<10), "Menu order is preserved")
+    }
+
+    @Test("Narrower columns are used when they avoid scrolling")
+    func narrowerColumnsInsteadOfScrolling() {
+        // Five tall menus need five columns: only the narrowest width fits five in 1200 pt.
+        let groups = (0..<5).map { Fixtures.group("Menu \($0)", index: $0, rows: 30) }
+        let layout = PanelLayout(groups: groups, availableSize: CGSize(width: 1200, height: 700))
+        #expect(!layout.needsScrolling)
+        #expect(layout.columns.count == 5)
+        #expect(layout.columnWidth == PanelMetrics.columnWidths.last)
     }
 
     @Test("When even the widest layout is too tall, the content scrolls within the screen height")
