@@ -10,6 +10,7 @@ final class AppContainer {
     let permission: any AccessibilityPermissionProviding
     let panelController: ShortcutPanelController
     private let gestureCoordinator: CommandGestureCoordinator
+    private let prefetcher: ActiveAppPrefetcher
 
     init() {
         let activeAppProvider = WorkspaceActiveAppTracker()
@@ -31,5 +32,7 @@ final class AppContainer {
             panelController: panelController
         )
         gestureCoordinator.start()
+        prefetcher = ActiveAppPrefetcher(activeAppProvider: activeAppProvider, permission: permission, store: store)
+        prefetcher.start()
     }
 }
