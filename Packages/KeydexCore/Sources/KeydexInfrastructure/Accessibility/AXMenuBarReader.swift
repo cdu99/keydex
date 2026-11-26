@@ -27,8 +27,8 @@ struct AXMenuBarReader: Sendable {
         default:
             throw .noMenuBar
         }
-        guard let menuBar = Self.element(from: value) else { throw .noMenuBar }
-        return children(of: menuBar).map { snapshot(of: $0, depth: 0) }
+        guard let value, let menuBar = AXElement.element(from: value) else { throw .noMenuBar }
+        return AXElement.children(of: menuBar).map { snapshot(of: $0, depth: 0) }
     }
 
     // MARK: Tree walking
@@ -46,9 +46,9 @@ struct AXMenuBarReader: Sendable {
 
     private func snapshot(of item: AXUIElement, depth: Int) -> MenuItemSnapshot {
         let values = Self.attributeValues(of: item)
-        let submenus = Self.elements(from: values[safe: 6])
+        let submenus = AXElement.elements(from: values[safe: 6])
         let children = depth < maximumDepth
-            ? submenus.flatMap { children(of: $0) }.map { snapshot(of: $0, depth: depth + 1) }
+            ? submenus.flatMap(AXElement.children(of:)).map { snapshot(of: $0, depth: depth + 1) }
             : []
         return MenuItemSnapshot(
             title: values[safe: 0] as? String ?? "",
@@ -61,14 +61,6 @@ struct AXMenuBarReader: Sendable {
         )
     }
 
-    /// Children of a menu bar or of a menu (the `AXMenu` under an item with a submenu).
-    private func children(of element: AXUIElement) -> [AXUIElement] {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &value) == .success
-        else { return [] }
-        return Self.elements(from: value)
-    }
-
     // MARK: Low-level helpers
 
     /// Missing attributes come back as `AXValue` error placeholders, which fail the casts above.
@@ -79,16 +71,6 @@ struct AXMenuBarReader: Sendable {
         )
         guard error == .success, let values = values as? [AnyObject] else { return [] }
         return values
-    }
-
-    private static func element(from value: CFTypeRef?) -> AXUIElement? {
-        guard let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        return (value as! AXUIElement) // Safe: type checked above.
-    }
-
-    private static func elements(from value: CFTypeRef?) -> [AXUIElement] {
-        guard let array = value as? [AnyObject] else { return [] }
-        return array.compactMap { element(from: $0) }
     }
 }
 

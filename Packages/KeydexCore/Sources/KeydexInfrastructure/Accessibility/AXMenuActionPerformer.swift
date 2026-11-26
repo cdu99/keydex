@@ -29,22 +29,3 @@ public struct AXMenuActionPerformer: ShortcutActionPerforming {
         return children.first.map(AXElement.children(of:)) ?? []
     }
 }
-
-/// Small helpers over the C Accessibility API.
-enum AXElement {
-    static func attribute(_ name: String, of element: AXUIElement) -> CFTypeRef? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
-        return value
-    }
-
-    static func element(from value: CFTypeRef) -> AXUIElement? {
-        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        return (value as! AXUIElement) // Safe: type checked above.
-    }
-
-    static func children(of element: AXUIElement) -> [AXUIElement] {
-        guard let array = attribute(kAXChildrenAttribute, of: element) as? [AnyObject] else { return [] }
-        return array.compactMap { Self.element(from: $0) }
-    }
-}
