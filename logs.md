@@ -39,7 +39,7 @@ Les dépendances vont vers le domaine : l'infrastructure implémente ses protoco
 | 2 | Panneau (Liquid Glass, groupes par menu, colonnes adaptatives) | ✅ |
 | 3 | Geste ⌘ maintenu (coup d'œil) + double appui | ✅ |
 | 4 | Performance : cache, préchargement, rafraîchissement asynchrone | ✅ |
-| 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ⏳ |
+| 5 | Mode recherche : double ⌘, filtre, navigation, déclenchement | ✅ |
 | 6 | Réglages, lancement au démarrage, accueil des permissions | ⏳ |
 | 7 | (après v1) Fiches perso par app et fiche système, rechargées à chaud | ⏳ |
 
@@ -211,3 +211,43 @@ Une capture de Finder sur l'écran 14" montrait des menus **coupés en bas**. Un
 2. Sur une app jamais ouverte depuis le lancement de Keydex, ⌘ tout de suite : le panneau apparaît après la première lecture (un peu plus lent, c'est normal).
 3. Dans une app, sélectionne du texte ou non, puis maintiens ⌘ : l'état grisé de Copier/Couper se met à jour (après un court instant si le cache était périmé).
 4. ⌘Tab rapide entre plusieurs apps : rien ne doit ralentir.
+
+### Étape 5 — Mode recherche ✅ (2026-11-26)
+**Fait** (commits atomiques)
+- `feat(domain)` : `ShortcutQuery` cherche **par nom ou par touches**.
+  - Insensible à la casse et aux accents.
+  - Tous les termes doivent correspondre ; les menus et sous-menus comptent aussi.
+  - Modificateurs collés ou non : « ⌘⇧F », « cmd shift f », « Cmd+Shift+F ».
+  - Mots Windows/Linux et français acceptés : « ctrl », « alt », « maj ».
+  - Noms de touches : « esc », « échap », « f5 », « gauche », « ← ».
+  - Avec des modificateurs, une lettre seule désigne la touche ; sans, elle cherche le début des mots.
+- `feat(infra)` : `AXMenuActionPerformer` déclenche l'item via `AXPress`. `MenuPathResolver` (pur, testé) suit les positions et vérifie les titres. Si l'item a bougé, il le retrouve par son titre ; s'il a disparu, **il n'appuie sur rien** plutôt que sur un autre item.
+- `feat(dump)` : `--perform TITLE` pour tester depuis le terminal.
+- `refactor(infra)` : utilitaires AX partagés.
+- `feat(panel)` (view model) : requête, résultats affichés **dans la taille actuelle du panneau** (la fenêtre ne saute pas pendant la frappe), sélection ↑↓ circulaire, exécution de l'action (fermeture, puis 80 ms, puis `AXPress`).
+- `feat(panel)` (UI) :
+  - champ de recherche dans l'en-tête, nombre de résultats ;
+  - ligne sélectionnée en surbrillance (comme un item de menu) ;
+  - **↑ ↓ ↩ Échap** ;
+  - survol = sélection, clic = exécution ;
+  - « Aucun raccourci ne correspond… » quand rien ne correspond.
+  - Le panneau sticky **prend le clavier sans activer Keydex**.
+- `feat(panel)` : le panneau se ferme quand on change d'app (⌘Tab, Dock).
+- Tests : 87 au total (+22 : recherche, résolveur de menus, recherche et navigation dans le view model).
+
+**Vérifié en réel** (TextEdit, événements simulés) :
+- Double ⌘, puis « select all » : 1 résultat, sélectionné. Pendant la recherche, TextEdit ne reçoit rien et reste l'app active.
+- ↩ : le texte de TextEdit est sélectionné en moins de 100 ms, et la frappe suivante va bien dans TextEdit (le clavier est rendu).
+- Échap ferme et rend le clavier ; ⌘A et ⌘V fonctionnent dans le champ de recherche.
+- Les 9 scénarios du geste passent toujours.
+
+**Limites constatées**
+- Si une bulle de **correction automatique** est ouverte dans l'app (ex. TextEdit qui propose « Hello »), la première action déclenchée peut être absorbée par la fermeture de la bulle. C'est le même comportement qu'un clic dans le menu.
+- Les actions grisées (état peut-être périmé) restent déclenchables : l'app décide. Si l'action est réellement indisponible, rien ne se passe.
+
+**À tester**
+1. `make run`. Dans une app, **double appui ⌘ puis maintien** : le champ de recherche a le focus.
+2. Tape « copier » ou « copy », puis « ⌘⇧F », puis « fn ctrl left », puis « f5 » : les résultats se filtrent.
+3. ↑ ↓ pour choisir, **↩** pour exécuter : le panneau se ferme et l'action se fait dans ton app.
+4. **Échap** ou **✕** : retour exact dans ton app, la frappe y va directement.
+5. Clic sur une ligne : l'action est exécutée. ⌘Tab : le panneau se ferme.
