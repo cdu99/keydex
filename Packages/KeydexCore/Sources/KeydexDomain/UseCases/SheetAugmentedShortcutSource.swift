@@ -15,7 +15,7 @@ public struct SheetAugmentedShortcutSource: ShortcutSource {
     }
 
     public func catalog(for app: AppInfo) throws(ShortcutSourceError) -> ShortcutCatalog {
-        let applicable = sheetProviders.flatMap { $0.sheets() }.filter { $0.applies(to: app) }
+        let applicable = sheetProviders.flatMap { $0.sheets(for: app) }
         let appSpecificFirst = applicable.filter { !$0.apps.isEmpty } + applicable.filter(\.apps.isEmpty)
         let sheetGroups = appSpecificFirst.flatMap(\.groups)
 

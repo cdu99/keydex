@@ -10,8 +10,8 @@ private struct MenuStub: ShortcutSource {
 
 private struct SheetsStub: ShortcutSheetProviding {
     let markdown: [String]
-    func sheets() -> [ShortcutSheet] {
-        markdown.enumerated().map { ShortcutSheetParser.parse($1, id: "sheet\($0)").sheet }
+    func sheets(for app: AppInfo) -> [ShortcutSheet] {
+        markdown.enumerated().map { ShortcutSheetParser.parse($1, id: "sheet\($0)").sheet }.filter { $0.applies(to: app) }
     }
 }
 

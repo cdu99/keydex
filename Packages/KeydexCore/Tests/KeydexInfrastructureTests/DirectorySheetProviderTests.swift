@@ -26,7 +26,7 @@ struct DirectorySheetProviderTests {
             "zsh.md": "# zsh\n- `⌃W` Word", "macos.md": "# macOS\n- `⌃←` Space", "notes.txt": "ignored",
         ])
         let provider = DirectorySheetProvider(directories: [user])
-        #expect(provider.sheets().map(\.title) == ["macOS", "zsh"])
+        #expect(provider.sheets.map(\.title) == ["macOS", "zsh"])
     }
 
     @Test("A user file replaces the bundled file with the same name")
@@ -34,23 +34,31 @@ struct DirectorySheetProviderTests {
         let bundled = try folder("bundled", files: ["zsh.md": "# zsh (bundled)", "macos.md": "# macOS"])
         let user = try folder("user", files: ["ZSH.md": "# zsh (mine)"])
         let provider = DirectorySheetProvider(directories: [bundled, user])
-        #expect(Set(provider.sheets().map(\.title)) == ["macOS", "zsh (mine)"])
+        #expect(Set(provider.sheets.map(\.title)) == ["macOS", "zsh (mine)"])
     }
 
     @Test("Reload picks up changes, and parsing issues are reported per file")
     func reloadAndIssues() throws {
         let user = try folder("user", files: [:])
         let provider = DirectorySheetProvider(directories: [user])
-        #expect(provider.sheets().isEmpty)
+        #expect(provider.sheets.isEmpty)
 
         try "# App\n- `⌘?!` Bad".write(to: user.appendingPathComponent("app.md"), atomically: true, encoding: .utf8)
         provider.reload()
-        #expect(provider.sheets().map(\.title) == ["App"])
+        #expect(provider.sheets.map(\.title) == ["App"])
         #expect(provider.files.first?.issues.count == 1)
+    }
+
+    @Test("Only the sheets that apply to the app are given for it")
+    func filtersByApp() throws {
+        let user = try folder("user", files: ["zsh.md": "# zsh\napps: Ghostty", "macos.md": "# macOS"])
+        let provider = DirectorySheetProvider(directories: [user])
+        let safari = AppInfo(processID: 1, bundleIdentifier: "com.apple.Safari", name: "Safari")
+        #expect(provider.sheets(for: safari).map(\.title) == ["macOS"])
     }
 
     @Test("A missing folder is simply empty")
     func missingFolder() {
-        #expect(DirectorySheetProvider(directories: [root.appendingPathComponent("nope")]).sheets().isEmpty)
+        #expect(DirectorySheetProvider(directories: [root.appendingPathComponent("nope")]).sheets.isEmpty)
     }
 }

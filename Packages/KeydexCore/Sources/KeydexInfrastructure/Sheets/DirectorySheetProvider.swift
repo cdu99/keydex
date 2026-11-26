@@ -22,7 +22,12 @@ public final class DirectorySheetProvider: ShortcutSheetProviding {
         reload()
     }
 
-    public func sheets() -> [ShortcutSheet] {
+    public func sheets(for app: AppInfo) -> [ShortcutSheet] {
+        sheets.filter { $0.applies(to: app) }
+    }
+
+    /// Every loaded sheet, whatever its apps.
+    public var sheets: [ShortcutSheet] {
         loaded.withLock { $0.map(\.sheet) }
     }
 
