@@ -25,6 +25,12 @@ public actor ShortcutCatalogStore {
         return catalog
     }
 
+    /// Forgets every cached catalog, e.g. when sheets changed: the next read is fresh.
+    public func removeAll() {
+        catalogs.removeAll()
+        recency.removeAll()
+    }
+
     /// Reads the current catalog of `app` and caches it.
     public func refresh(_ app: AppInfo) async throws(ShortcutSourceError) -> ShortcutCatalog {
         let read = readsInFlight[app.processID] ?? startRead(of: app)

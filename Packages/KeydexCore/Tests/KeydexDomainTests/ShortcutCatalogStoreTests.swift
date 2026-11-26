@@ -82,6 +82,15 @@ struct ShortcutCatalogStoreTests {
         #expect(await store.cachedCatalog(for: finder) == nil)
     }
 
+    @Test("Removing all forgets every cached catalog")
+    func removeAll() async throws {
+        let store = ShortcutCatalogStore(source: CountingSource())
+        _ = try await store.refresh(finder)
+        try await waitUntilCached(finder, in: store)
+        await store.removeAll()
+        #expect(await store.cachedCatalog(for: finder) == nil)
+    }
+
     /// The cache is filled right after the read completes, on the store's actor.
     private func waitUntilCached(_ app: AppInfo, in store: ShortcutCatalogStore) async throws {
         for _ in 0..<100 where await store.cachedCatalog(for: app) == nil {
