@@ -16,12 +16,10 @@ struct StatusMenu: View {
                 .disabled(activeAppProvider.activeApp == nil)
         } else {
             Text("Keydex a besoin de l'accès Accessibilité")
-            Button("Autoriser l'accès…") {
-                permission.requestAccess()
-                permission.openSystemSettings()
-            }
+            Button("Autoriser l'accès…") { open(WindowID.welcome) }
         }
         Divider()
+        Button("Guide de démarrage…") { open(WindowID.welcome) }
         Button("Réglages…") { open(WindowID.settings) }
             .keyboardShortcut(",")
         Divider()
