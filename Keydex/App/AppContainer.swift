@@ -30,8 +30,7 @@ final class AppContainer {
         let sheets = DirectorySheetProvider(directories: [Self.bundledSheetsDirectory, Self.userSheetsDirectory])
         let store = ShortcutCatalogStore(source: SheetAugmentedShortcutSource(
             menus: AXMenuShortcutSource(),
-            // Ghostty's own configuration first: it is the truth for its keys.
-            sheetProviders: [GhosttyKeybindSheetProvider(), sheets]
+            sheetProviders: [sheets]
         ))
         let gestureTiming = GestureTimingPreference(store: UserDefaultsGestureTimingStore())
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
