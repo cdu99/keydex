@@ -3,7 +3,7 @@ import KeydexDomain
 import KeydexInfrastructure
 
 /// Usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]
-///        keydex-dump --check-sheet <file.md>...
+///        keydex-dump --check-sheet <file.md | ->...
 /// Prints the shortcuts Keydex reads from a running app, and how long the read takes;
 /// or checks shortcut sheets and prints what Keydex understands of them.
 
@@ -12,8 +12,12 @@ let arguments = CommandLine.arguments.dropFirst()
 if arguments.first == "--check-sheet" {
     var hasIssues = false
     for path in arguments.dropFirst() {
-        let url = URL(fileURLWithPath: path)
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else {
+        // "-" reads standard input, to check what a sheet's command prints.
+        let url = URL(fileURLWithPath: path == "-" ? "stdin" : path)
+        let contents = path == "-"
+            ? String(data: FileHandle.standardInput.readDataToEndOfFile(), encoding: .utf8)
+            : try? String(contentsOf: url, encoding: .utf8)
+        guard let text = contents else {
             print("\(path): cannot read the file")
             hasIssues = true
             continue
@@ -36,7 +40,7 @@ if arguments.first == "--check-sheet" {
     exit(hasIssues ? 1 : 0)
 }
 guard let query = arguments.first(where: { !$0.hasPrefix("--") }) else {
-    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]\n       keydex-dump --check-sheet <file.md>...")
+    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]\n       keydex-dump --check-sheet <file.md | ->...")
     exit(2)
 }
 let runs = arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 1
