@@ -1,3 +1,4 @@
+import Foundation
 import KeydexDomain
 import KeydexInfrastructure
 import KeydexPresentation
@@ -13,11 +14,24 @@ final class AppContainer {
     let settings: SettingsViewModel
     private let gestureCoordinator: CommandGestureCoordinator
     private let prefetcher: ActiveAppPrefetcher
+    let sheets: DirectorySheetProvider
+    private let sheetsWatcher: DirectoryWatcher
+
+    /// Where users write their own sheets (created if missing).
+    static let userSheetsDirectory = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".config/keydex", isDirectory: true)
+    private static let bundledSheetsDirectory = Bundle.main.resourceURL!
+        .appendingPathComponent("Sheets", isDirectory: true)
 
     init() {
         let activeAppProvider = WorkspaceActiveAppTracker()
         let permission = AXPermissionService()
-        let store = ShortcutCatalogStore(source: AXMenuShortcutSource())
+        try? FileManager.default.createDirectory(at: Self.userSheetsDirectory, withIntermediateDirectories: true)
+        let sheets = DirectorySheetProvider(directories: [Self.bundledSheetsDirectory, Self.userSheetsDirectory])
+        let store = ShortcutCatalogStore(source: SheetAugmentedShortcutSource(
+            menus: AXMenuShortcutSource(),
+            sheetProviders: [sheets]
+        ))
         let gestureTiming = GestureTimingPreference(store: UserDefaultsGestureTimingStore())
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
             activeAppProvider: activeAppProvider,
@@ -26,6 +40,12 @@ final class AppContainer {
             performer: AXMenuActionPerformer()
         ))
 
+        self.sheets = sheets
+        // Saving a sheet applies at the next glance, without relaunching.
+        sheetsWatcher = DirectoryWatcher(directory: Self.userSheetsDirectory) {
+            sheets.reload()
+            Task { await store.removeAll() }
+        }
         self.activeAppProvider = activeAppProvider
         self.permission = permission
         self.panelController = panelController
