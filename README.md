@@ -152,6 +152,7 @@ make clean
 ```
 
 - The Xcode project is generated from `project.yml`, so it is not committed.
+- Builds go to `build/DerivedData.noindex`, which Spotlight ignores: only the installed `/Applications/Keydex.app` shows up in your apps. Don't run a built app and the installed one at the same time (`make run` quits any running Keydex first).
 - **Signing**: to keep the Accessibility permission across rebuilds, sign with your free Apple development team. Create `Config/Signing.local.xcconfig` (git-ignored):
   ```
   DEVELOPMENT_TEAM = <your team ID>

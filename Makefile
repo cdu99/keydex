@@ -1,7 +1,9 @@
 # Convenience commands. Uses the full Xcode even if xcode-select points to the CommandLineTools.
 export DEVELOPER_DIR ?= /Applications/Xcode.app/Contents/Developer
 
-DERIVED_DATA := build/DerivedData
+# ".noindex": Spotlight ignores the folder, so the built apps do not show up next to the
+# installed one (/Applications/Keydex.app).
+DERIVED_DATA := build/DerivedData.noindex
 APP := $(DERIVED_DATA)/Build/Products/Debug/Keydex.app
 RELEASE_APP := $(DERIVED_DATA)/Build/Products/Release/Keydex.app
 INSTALL_DIR := /Applications
