@@ -21,7 +21,7 @@ final class AppContainer {
     static let userSheetsDirectory = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".config/keydex", isDirectory: true)
     private static let bundledSheetsDirectory = Bundle.main.resourceURL!
-        .appendingPathComponent("Sheets", isDirectory: true)
+        .appendingPathComponent("sheets", isDirectory: true)
 
     init() {
         let activeAppProvider = WorkspaceActiveAppTracker()

@@ -23,10 +23,9 @@ targets:
     platform: macOS
     sources:
       - path: Keydex
-        excludes:
-          - Resources/Sheets
-      # Bundled sheets, copied as a folder (Keydex.app/Contents/Resources/Sheets).
-      - path: Keydex/Resources/Sheets
+      # The repository's sheets/ folder ships with the app (Keydex.app/Contents/Resources/sheets),
+      # so a sheet contributed there is bundled.
+      - path: sheets
         type: folder
         buildPhase: resources
     configFiles:
