@@ -73,4 +73,20 @@ struct ShortcutSheetParserTests {
         #expect(groups.flatMap(\.shortcuts).allSatisfy { !$0.isPerformable })
         #expect(Set(groups.flatMap(\.shortcuts).map(\.id)).count == 5, "Unique ids")
     }
+
+    @Test("A sheet may declare a command in its header; backticks are optional")
+    func command() {
+        let sheet = ShortcutSheetParser.parse("# Ghostty\napps: Ghostty\ncommand: `./ghostty.sh`\n", id: "ghostty").sheet
+        #expect(sheet.command == "./ghostty.sh")
+        #expect(ShortcutSheetParser.parse(zsh, id: "zsh").sheet.command == nil)
+        let late = ShortcutSheetParser.parse("# X\n## S\ncommand: rm -rf /\n", id: "x").sheet
+        #expect(late.command == nil, "Not read after the header: it is free text there")
+    }
+
+    @Test("Sections produced by a command come before the sheet's own")
+    func appending() {
+        let sheet = ShortcutSheetParser.parse("# T\n## Mine\n- `⌘K` Mine", id: "t").sheet
+        let generated = ShortcutSheetParser.parse("## Generated\n- `⌘J` Generated", id: "out").sheet.sections
+        #expect(sheet.appending(generated).sections.map(\.title) == ["Generated", "Mine"])
+    }
 }

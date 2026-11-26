@@ -26,13 +26,23 @@ public struct ShortcutSheet: Equatable, Sendable {
     public let title: String
     /// Names or bundle identifiers of the apps it applies to; empty means every app.
     public let apps: [String]
+    /// A shell command whose output is a sheet, completing this one: for apps that can list
+    /// their own shortcuts (`ghostty +list-keybinds`, `tmux list-keys`…), so the sheet always
+    /// matches the user's configuration. Run from the sheet's folder.
+    public let command: String?
     public let sections: [Section]
 
-    public init(id: String, title: String, apps: [String], sections: [Section]) {
+    public init(id: String, title: String, apps: [String], command: String? = nil, sections: [Section]) {
         self.id = id
         self.title = title
         self.apps = apps
+        self.command = command
         self.sections = sections
+    }
+
+    /// The same sheet, with sections added (e.g. those produced by its command).
+    public func appending(_ extraSections: [Section]) -> ShortcutSheet {
+        ShortcutSheet(id: id, title: title, apps: apps, command: command, sections: extraSections + sections)
     }
 
     public func applies(to app: AppInfo) -> Bool {

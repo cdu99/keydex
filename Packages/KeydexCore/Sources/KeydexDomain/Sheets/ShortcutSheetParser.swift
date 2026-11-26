@@ -4,6 +4,7 @@ import Foundation
 ///
 ///     # zsh
 ///     apps: Ghostty, Terminal, iTerm2
+///     command: ./zsh.sh        (optional: its output is a sheet completing this one)
 ///
 ///     Free text is allowed and ignored.
 ///
@@ -38,6 +39,7 @@ private struct SheetBuilder {
     let id: String
     private var title: String?
     private var apps: [String] = []
+    private var command: String?
     private var sections: [ShortcutSheet.Section] = []
     private var currentTitle: String?
     private var currentEntries: [ShortcutSheet.Entry] = []
@@ -50,7 +52,7 @@ private struct SheetBuilder {
     var result: ShortcutSheetParser.Result {
         var builder = self
         builder.closeSection()
-        let sheet = ShortcutSheet(id: id, title: title ?? id, apps: apps, sections: builder.sections)
+        let sheet = ShortcutSheet(id: id, title: title ?? id, apps: apps, command: command, sections: builder.sections)
         return ShortcutSheetParser.Result(sheet: sheet, issues: issues)
     }
 
@@ -60,8 +62,10 @@ private struct SheetBuilder {
             currentTitle = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
         } else if line.hasPrefix("# ") {
             if title == nil { title = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces) }
-        } else if let value = Self.value(of: "apps", in: line), sections.isEmpty, currentTitle == nil {
+        } else if let value = Self.value(of: "apps", in: line), isInHeader {
             apps = value.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        } else if let value = Self.value(of: "command", in: line), isInHeader {
+            command = value.trimmingCharacters(in: CharacterSet(charactersIn: "`")).nilIfEmpty
         } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
             readEntry(Self.listEntry(String(line.dropFirst(2))), line: line, lineNumber: lineNumber)
         } else if line.hasPrefix("|") {
@@ -69,6 +73,11 @@ private struct SheetBuilder {
             readEntry(cells, line: line, lineNumber: lineNumber)
         }
         // Anything else is free text.
+    }
+
+    /// Metadata (apps, command) is only read before the first section and entry.
+    private var isInHeader: Bool {
+        sections.isEmpty && currentTitle == nil && currentEntries.isEmpty
     }
 
     private mutating func readEntry(_ parts: (keys: String, title: String)?, line: String, lineNumber: Int) {
@@ -129,4 +138,8 @@ private struct SheetBuilder {
     private static func trimSeparators(_ text: String) -> String {
         text.trimmingCharacters(in: CharacterSet(charactersIn: " \t—–-:"))
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
