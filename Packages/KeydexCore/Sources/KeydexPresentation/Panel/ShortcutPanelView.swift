@@ -62,8 +62,8 @@ public struct ShortcutPanelView: View {
     }
 
     private var shownCount: String? {
-        guard case let .loaded(catalog, _) = viewModel.content else { return nil }
-        guard !viewModel.query.isEmpty else { return "\(catalog.shortcutCount) raccourcis" }
+        guard case .loaded = viewModel.content else { return nil }
+        guard !viewModel.query.isEmpty else { return "\(viewModel.displayedShortcuts.count) raccourcis" }
         let count = viewModel.displayedShortcuts.count
         return count == 1 ? "1 résultat" : "\(count) résultats"
     }
@@ -105,7 +105,9 @@ public struct ShortcutPanelView: View {
     private func shortcuts(_ layout: PanelLayout) -> some View {
         if layout.needsScrolling {
             ScrollViewReader { proxy in
+                // No scroll bar: it would take width from the last column.
                 ScrollView { columns(layout) }
+                    .scrollIndicators(.never)
                     .onChange(of: viewModel.selection) { _, selection in
                         if let selection { proxy.scrollTo(selection) }
                     }

@@ -10,12 +10,16 @@ public struct ShortcutGroup: Hashable, Sendable, Identifiable {
     public let id: String
     public let title: String
     public let kind: Kind
+    /// True for sheets that apply to every app (system shortcuts): the same in every app,
+    /// so they are searched rather than shown at a glance.
+    public let appliesToEveryApp: Bool
     public let shortcuts: [Shortcut]
 
-    public init(id: String, title: String, kind: Kind, shortcuts: [Shortcut]) {
+    public init(id: String, title: String, kind: Kind, appliesToEveryApp: Bool = false, shortcuts: [Shortcut]) {
         self.id = id
         self.title = title
         self.kind = kind
+        self.appliesToEveryApp = appliesToEveryApp
         self.shortcuts = shortcuts
     }
 
@@ -25,6 +29,6 @@ public struct ShortcutGroup: Hashable, Sendable, Identifiable {
     }
 
     public func replacingShortcuts(with shortcuts: [Shortcut]) -> ShortcutGroup {
-        ShortcutGroup(id: id, title: title, kind: kind, shortcuts: shortcuts)
+        ShortcutGroup(id: id, title: title, kind: kind, appliesToEveryApp: appliesToEveryApp, shortcuts: shortcuts)
     }
 }

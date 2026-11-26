@@ -50,7 +50,9 @@ public struct ShortcutSheet: Equatable, Sendable {
                 Shortcut(id: "\(groupID):\(entryIndex)", title: entry.title, keyCombo: entry.keyCombo)
             }
             let groupTitle = section.title.map { "\(title) · \($0)" } ?? title
-            return ShortcutGroup(id: groupID, title: groupTitle, kind: .sheet, shortcuts: shortcuts)
+            return ShortcutGroup(
+                id: groupID, title: groupTitle, kind: .sheet, appliesToEveryApp: apps.isEmpty, shortcuts: shortcuts
+            )
         }
     }
 }

@@ -118,4 +118,21 @@ struct PanelSearchTests {
         #expect(!closed)
         #expect(performer.performedTitles.isEmpty)
     }
+
+    @Test("Sheets for every app are not in the glance, but are found by searching")
+    func systemSheetsOnlyInSearch() async {
+        let capture = Shortcut(id: "sheet:macos:0:0", title: "Capturer l'écran", keyCombo: KeyComboParser.parse("⇧⌘3")!)
+        let system = ShortcutGroup(id: "sheet:macos:0", title: "macOS · Captures", kind: .sheet,
+                                   appliesToEveryApp: true, shortcuts: [capture])
+        let viewModel = ShortcutPanelViewModel(
+            activeAppProvider: StubActiveApp(Fixtures.app),
+            permission: StubPermission(granted: true),
+            store: ShortcutCatalogStore(source: StubShortcutSource(result: .success([Fixtures.group("Fichier", index: 1, rows: 3), system]))),
+            performer: performer
+        )
+        await viewModel.prepare(mode: .sticky, availableSize: Fixtures.screen)
+        #expect(!viewModel.displayedShortcuts.contains(capture))
+        viewModel.query = "capturer"
+        #expect(viewModel.displayedShortcuts == [capture])
+    }
 }

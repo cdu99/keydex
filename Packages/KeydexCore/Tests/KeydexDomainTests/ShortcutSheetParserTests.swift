@@ -66,7 +66,10 @@ struct ShortcutSheetParserTests {
     func groups() {
         let groups = ShortcutSheetParser.parse(zsh, id: "zsh").sheet.groups
         #expect(groups.map(\.title) == ["zsh · Mots", "zsh · Ligne"])
-        #expect(groups.allSatisfy { $0.kind == .sheet })
+        #expect(groups.allSatisfy { $0.kind == .sheet && !$0.appliesToEveryApp })
+        let systemGroups = ShortcutSheetParser.parse("# macOS\n- `⌃↑` Mission Control", id: "macos").sheet.groups
+        let allGlobal = systemGroups.allSatisfy { $0.appliesToEveryApp }
+        #expect(allGlobal)
         #expect(groups.flatMap(\.shortcuts).allSatisfy { !$0.isPerformable })
         #expect(Set(groups.flatMap(\.shortcuts).map(\.id)).count == 5, "Unique ids")
     }

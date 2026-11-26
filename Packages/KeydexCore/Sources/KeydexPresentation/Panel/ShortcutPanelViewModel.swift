@@ -176,10 +176,17 @@ public final class ShortcutPanelViewModel {
 
     private func show(_ catalog: ShortcutCatalog) {
         if case let .loaded(shown, _) = content, shown == catalog { return }
-        content = catalog.isEmpty
+        let glanceGroups = Self.glanceGroups(of: catalog)
+        content = glanceGroups.isEmpty
             ? .noShortcuts(catalog.app)
-            : .loaded(catalog, PanelLayout(groups: catalog.groups, availableSize: availableSize))
+            : .loaded(catalog, PanelLayout(groups: glanceGroups, availableSize: availableSize))
         applyQuery(selectingFirstResult: false)
+    }
+
+    /// What the panel shows without a search: the app's menus and its own sheets. Sheets for
+    /// every app (system shortcuts) are identical everywhere: they are found by searching.
+    private static func glanceGroups(of catalog: ShortcutCatalog) -> [ShortcutGroup] {
+        catalog.groups.filter { !$0.appliesToEveryApp }
     }
 
     /// Lays out the shortcuts matching `query` inside the panel's current size, so the
