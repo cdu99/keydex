@@ -60,3 +60,14 @@ final class StubPermission: AccessibilityPermissionProviding {
     func requestAccess() { requestCount += 1 }
     func openSystemSettings() { openedSettings = true }
 }
+
+/// Records the shortcuts it is asked to perform.
+final class RecordingPerformer: ShortcutActionPerforming {
+    private let performed = Mutex<[String]>([])
+
+    var performedTitles: [String] { performed.withLock { $0 } }
+
+    func perform(_ shortcut: Shortcut, in app: AppInfo) throws(ShortcutActionError) {
+        performed.withLock { $0.append(shortcut.title) }
+    }
+}

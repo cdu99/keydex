@@ -14,7 +14,8 @@ struct ShortcutPanelViewModelTests {
         let viewModel = ShortcutPanelViewModel(
             activeAppProvider: StubActiveApp(app),
             permission: permission,
-            store: ShortcutCatalogStore(source: StubShortcutSource(result: result))
+            store: ShortcutCatalogStore(source: StubShortcutSource(result: result)),
+            performer: RecordingPerformer()
         )
         return (viewModel, permission)
     }
@@ -73,7 +74,8 @@ struct ShortcutPanelViewModelTests {
         let viewModel = ShortcutPanelViewModel(
             activeAppProvider: StubActiveApp(Fixtures.app),
             permission: StubPermission(granted: true),
-            store: store
+            store: store,
+            performer: RecordingPerformer()
         )
         source.groups = [Fixtures.group("Fichier", index: 1, rows: 5)]
 

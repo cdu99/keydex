@@ -19,7 +19,8 @@ final class AppContainer {
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
             activeAppProvider: activeAppProvider,
             permission: permission,
-            store: store
+            store: store,
+            performer: AXMenuActionPerformer()
         ))
 
         self.activeAppProvider = activeAppProvider
