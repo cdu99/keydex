@@ -13,7 +13,7 @@ public struct ShortcutQuery: Equatable, Sendable {
     public init(_ text: String) {
         var modifiers: ModifierSet = []
         var terms: [String] = []
-        for token in Self.tokens(of: text) {
+        for token in KeyTokenizer.tokens(of: text) {
             if let modifier = KeySearchNames.modifiersByToken[token] {
                 modifiers.insert(modifier)
             } else {
@@ -52,17 +52,5 @@ public struct ShortcutQuery: Equatable, Sendable {
     private static func name(_ name: String, contains term: String) -> Bool {
         guard term.count == 1 else { return name.contains(term) }
         return name.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).contains { $0.hasPrefix(term) }
-    }
-
-    private static func tokens(of text: String) -> [String] {
-        var spaced = ""
-        for character in text {
-            if KeySearchNames.glueableSymbols.contains(character) {
-                spaced += character == "+" ? " " : " \(character) "
-            } else {
-                spaced.append(character)
-            }
-        }
-        return spaced.split(whereSeparator: \.isWhitespace).map { SearchText.normalize(String($0)) }
     }
 }
