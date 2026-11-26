@@ -1,0 +1,61 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.34000,0.36000,0.98000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "symbol.png",
+          "name" : "Symbol"
+        },
+        {
+          "glass" : true,
+          "image-name" : "keycap.png",
+          "name" : "Keycap"
+        }
+      ],
+      "name" : "Keycap",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0
+      }
+    },
+    {
+      "blur-material" : 0.5,
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "rows.png",
+          "name" : "Rows"
+        },
+        {
+          "glass" : true,
+          "image-name" : "panel.png",
+          "name" : "Panel"
+        }
+      ],
+      "name" : "Panel",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.29999999999999999
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.40000000000000002
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
