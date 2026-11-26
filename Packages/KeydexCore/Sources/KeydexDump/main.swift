@@ -3,11 +3,40 @@ import KeydexDomain
 import KeydexInfrastructure
 
 /// Usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]
-/// Prints the shortcuts Keydex reads from a running app, and how long the read takes.
+///        keydex-dump --check-sheet <file.md>...
+/// Prints the shortcuts Keydex reads from a running app, and how long the read takes;
+/// or checks shortcut sheets and prints what Keydex understands of them.
 
 let arguments = CommandLine.arguments.dropFirst()
+
+if arguments.first == "--check-sheet" {
+    var hasIssues = false
+    for path in arguments.dropFirst() {
+        let url = URL(fileURLWithPath: path)
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else {
+            print("\(path): cannot read the file")
+            hasIssues = true
+            continue
+        }
+        let result = ShortcutSheetParser.parse(text, id: url.deletingPathExtension().lastPathComponent)
+        let sheet = result.sheet
+        let apps = sheet.apps.isEmpty ? "every app" : sheet.apps.joined(separator: ", ")
+        print("\(path): \(sheet.title) — for \(apps)")
+        for section in sheet.sections {
+            print("  [\(section.title ?? sheet.title)]")
+            for entry in section.entries {
+                print("    \(entry.keyCombo.displayString.padding(toLength: 8, withPad: " ", startingAt: 0)) \(entry.title)")
+            }
+        }
+        for issue in result.issues {
+            print("  ⚠️ line \(issue.line): \(issue.message)")
+        }
+        hasIssues = hasIssues || !result.issues.isEmpty
+    }
+    exit(hasIssues ? 1 : 0)
+}
 guard let query = arguments.first(where: { !$0.hasPrefix("--") }) else {
-    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]")
+    print("usage: keydex-dump <app name or bundle id> [--raw] [--runs N] [--pause MS] [--perform TITLE]\n       keydex-dump --check-sheet <file.md>...")
     exit(2)
 }
 let runs = arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 1
