@@ -9,6 +9,7 @@ final class AppContainer {
     let activeAppProvider: any ActiveAppProviding
     let permission: any AccessibilityPermissionProviding
     let panelController: ShortcutPanelController
+    let gestureTiming: GestureTimingPreference
     private let gestureCoordinator: CommandGestureCoordinator
     private let prefetcher: ActiveAppPrefetcher
 
@@ -16,6 +17,7 @@ final class AppContainer {
         let activeAppProvider = WorkspaceActiveAppTracker()
         let permission = AXPermissionService()
         let store = ShortcutCatalogStore(source: AXMenuShortcutSource())
+        let gestureTiming = GestureTimingPreference(store: UserDefaultsGestureTimingStore())
         let panelController = ShortcutPanelController(viewModel: ShortcutPanelViewModel(
             activeAppProvider: activeAppProvider,
             permission: permission,
@@ -26,8 +28,9 @@ final class AppContainer {
         self.activeAppProvider = activeAppProvider
         self.permission = permission
         self.panelController = panelController
+        self.gestureTiming = gestureTiming
         gestureCoordinator = CommandGestureCoordinator(
-            timing: .standard,
+            timing: gestureTiming,
             inputMonitor: NSEventInputMonitor(),
             permission: permission,
             panelController: panelController

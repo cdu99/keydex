@@ -1,4 +1,5 @@
 import KeydexDomain
+import KeydexPresentation
 import Observation
 
 /// Drives the ⌘ gesture: feeds system input events to `CommandGestureRecognizer`, runs
@@ -6,18 +7,20 @@ import Observation
 @MainActor
 final class CommandGestureCoordinator {
     private var recognizer: CommandGestureRecognizer
+    private let timing: GestureTimingPreference
     private let inputMonitor: any InputEventMonitoring
     private let permission: any AccessibilityPermissionProviding
     private let panelController: ShortcutPanelController
     private var timer: Task<Void, Never>?
 
     init(
-        timing: GestureTiming,
+        timing: GestureTimingPreference,
         inputMonitor: any InputEventMonitoring,
         permission: any AccessibilityPermissionProviding,
         panelController: ShortcutPanelController
     ) {
-        recognizer = CommandGestureRecognizer(timing: timing)
+        recognizer = CommandGestureRecognizer(timing: timing.timing)
+        self.timing = timing
         self.inputMonitor = inputMonitor
         self.permission = permission
         self.panelController = panelController
@@ -26,6 +29,16 @@ final class CommandGestureCoordinator {
     func start() {
         startMonitoring()
         restartMonitoringWhenPermissionChanges()
+        followTimingChanges()
+    }
+
+    /// Delays changed in the settings apply to the next gesture, without relaunching.
+    private func followTimingChanges() {
+        recognizer.timing = withObservationTracking {
+            timing.timing
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.followTimingChanges() }
+        }
     }
 
     private func startMonitoring() {
