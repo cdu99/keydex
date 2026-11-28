@@ -1,0 +1,50 @@
+=> editor:save-file	Save current file
+editor:download-attachments	Download attachments for current file
+editor:follow-link	Follow link under cursor
+editor:open-link-in-new-leaf	Open link under cursor in new tab
+editor:open-link-in-new-window	Open link under cursor in new window
+editor:open-link-in-new-split	Open link under cursor to the right
+workspace:edit-file-title	Rename file
+workspace:undo-close-pane	Undo close tab
+workspace:next-tab	Go to next tab
+workspace:goto-tab-1	Go to tab #1
+workspace:goto-tab-2	Go to tab #2
+workspace:goto-tab-3	Go to tab #3
+workspace:goto-tab-4	Go to tab #4
+workspace:goto-tab-5	Go to tab #5
+workspace:goto-tab-6	Go to tab #6
+workspace:goto-tab-7	Go to tab #7
+workspace:goto-tab-8	Go to tab #8
+workspace:goto-last-tab	Go to last tab
+workspace:previous-tab	Go to previous tab
+workspace:new-tab	New tab
+workspace:close	Close current tab
+workspace:close-window	Close window
+app:go-back	Navigate back
+app:go-forward	Navigate forward
+app:open-settings	Open settings
+markdown:toggle-preview	Toggle reading view
+markdown:add-metadata-property	Add file property
+app:open-help	Open help
+file-explorer:new-file	Create new note
+file-explorer:new-file-in-new-pane	Create note to the right
+file-explorer:move-file	Move current file to another folder
+editor:open-search	Search current file
+editor:open-search-replace	Search & replace in current file
+editor:insert-link	Insert Markdown link
+editor:toggle-bold	Toggle bold
+editor:toggle-italics	Toggle italic
+editor:toggle-comments	Toggle comment
+editor:toggle-checklist-status	Toggle checkbox status
+editor:delete-paragraph	Delete paragraph
+editor:add-cursor-below	Add cursor below
+editor:add-cursor-above	Add cursor above
+editor:context-menu	Show context menu under cursor
+file-explorer:reveal-active-file	Files: Reveal current file in navigation
+global-search:open	Search: Search in all files
+switcher:open	Quick switcher: Open quick switcher
+graph:open	Graph view: Open graph view
+graph:open-local	Graph view: Open local graph
+insert-template	Templates: Insert template
+command-palette:open	Command palette: Open command palette
+outline:open	Outline: Show outline
