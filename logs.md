@@ -362,3 +362,21 @@ Toutes les fonctionnalités v1 des specs sont en place. Côté qualité : 97 tes
    Il apparaît au prochain coup d'œil, sans relancer l'app. Supprime le fichier : il disparaît.
 3. Réglages → **Fiches de raccourcis** : les fiches sont listées, et la commande de Ghostty (`sh ./ghostty.sh`) est visible.
 4. Ajoute un raccourci dans ta config Ghostty (ex. `keybind = super+shift+k=clear_screen`) : il apparaît au coup d'œil suivant.
+
+### Fiche Obsidian (2026-11-27)
+
+Obsidian n'affiche que quelques raccourcis dans ses menus : la plupart sont dans Réglages → Raccourcis.
+
+- `feat(sheets)` : **fiche générée** `obsidian.md` + `obsidian.sh`.
+  - Les touches viennent du CLI d'Obsidian (`obsidian-cli hotkeys`, dans l'app) : défauts, raccourcis perso et plugins du coffre ouvert.
+  - Les noms viennent d'Obsidian (`eval` en lecture seule sur `app.commands`), sans le préfixe du plugin. Si `eval` échoue, le titre est tiré de l'identifiant (`editor:toggle-bold` → « Toggle bold »).
+  - Sections : Édition, Onglets et fenêtres, Navigation et recherche, Fichiers, Panneaux, puis un groupe par plugin tiers.
+  - Une entrée par raccourci quand une commande en a plusieurs ; les touches sans équivalent Mac (`Insert`) sont ignorées.
+- Tests : **137** (`ObsidianSheetScriptTests`, sur la sortie réelle enregistrée).
+
+**Décision** : les titres restent ceux d'Obsidian (dans la langue de l'app) plutôt qu'une traduction à la main, pour couvrir aussi les plugins.
+
+**À tester**
+1. Dans Obsidian, Réglages → Général → **Command line interface** activé.
+2. `make install`, puis maintiens ⌘ dans Obsidian : les sections de la fiche apparaissent (icône document).
+3. Change un raccourci dans Obsidian : il apparaît au coup d'œil suivant.

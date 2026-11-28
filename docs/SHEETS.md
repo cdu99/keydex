@@ -92,7 +92,7 @@ command: sh ./ghostty.sh
 - It must be quick: it is stopped after 2 seconds, and its output is reused for 2 seconds. If it fails, the sheet shows only what is written in it.
 - **Trust**: commands run on your Mac. Only the bundled sheets (reviewed in this repository) and your own folder can declare commands, and *Réglages* lists every sheet with the command it runs.
 
-The bundled [`ghostty.sh`](../sheets/ghostty.sh) is a complete example in `sh` + `awk`.
+The bundled [`ghostty.sh`](../sheets/ghostty.sh) is a complete example in `sh` + `awk`; [`obsidian.sh`](../sheets/obsidian.sh) does the same from Obsidian's command line (`obsidian hotkeys`).
 
 ## Checking a sheet
 
